@@ -42,6 +42,7 @@ fun SplashScreen() {
                 fontSize = 50.sp,
                 color = Color.White,
                 fontWeight = FontWeight.Bold
+                //
             )
         }
     }
