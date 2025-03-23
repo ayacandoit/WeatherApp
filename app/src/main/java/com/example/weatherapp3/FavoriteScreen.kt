@@ -77,6 +77,14 @@ fun FavoriteScreen() {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(favoriteLocations) { location ->
+                    val weatherIcon = when (location) {
+                        "New York" -> R.drawable.clearsky
+                        "London" -> R.drawable.heavyrain
+                        "Cairo" -> R.drawable.clouds
+                        "Paris" -> R.drawable.wind
+                        "Tokyo" -> R.drawable.wind
+                        else -> R.drawable.snowflake
+                    }
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -91,6 +99,13 @@ fun FavoriteScreen() {
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            Image(
+                                painter = painterResource(id = weatherIcon),
+                                contentDescription = "Weather Icon",
+                                modifier = Modifier
+                                    .size(50.dp)
+                                    .padding(end = 8.dp)
+                            )
                             Text(
                                 text = location,
                                 color = Color.Black,
