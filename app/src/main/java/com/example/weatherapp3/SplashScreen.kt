@@ -5,6 +5,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -16,17 +17,25 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.example.weatherapp3.R
+import kotlinx.coroutines.delay
 
 @Composable
-fun SplashScreen() {
+fun SplashScreen(navController: NavController) {
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.animation))
     val robotoFontFamily = FontFamily(
         Font(R.font.robot, FontWeight.Normal),
     )
+    LaunchedEffect(Unit) {
+        delay(3000)
+        navController.navigate("Home") {
+            popUpTo("Splash") { inclusive = true }
+        }
+    }
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center

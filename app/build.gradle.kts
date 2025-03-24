@@ -58,4 +58,6 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation("com.airbnb.android:lottie-compose:6.1.0")
 
+    implementation ("androidx.navigation:navigation-compose:2.8.9")
+
 }

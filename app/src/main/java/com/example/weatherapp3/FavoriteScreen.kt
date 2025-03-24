@@ -22,13 +22,14 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.LaunchedEffect
+import androidx.navigation.NavController
 import com.airbnb.lottie.compose.*
 import com.example.weatherapp3.R
 import kotlinx.coroutines.delay
 
 
 @Composable
-fun FavoriteScreen() {
+fun FavoriteScreen(navController: NavController) {
     var isLoading by remember { mutableStateOf(true) }
     var favoriteLocations by remember { mutableStateOf(emptyList<String>()) }
 
@@ -140,7 +141,7 @@ fun FavoriteScreen() {
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
             ) {
-                BottomNavigationBar()
+                BottomNavigat(navController )
             }
 
             FloatingActionButton(
@@ -161,7 +162,7 @@ fun FavoriteScreen() {
 }
 
 @Composable
-fun BottomNavigationBar() {
+fun BottomNavigat(navController: NavController) {
     NavigationBar(
         containerColor = Color(0xFFC5E2EE),
         tonalElevation = 8.dp,
@@ -175,7 +176,7 @@ fun BottomNavigationBar() {
             icon = { Icon(Icons.Filled.Home, contentDescription = "Home", tint = Color.Black) },
             label = { Text("Home", color = Color.Black) },
             selected = true,
-            onClick = {},
+            onClick = {navController.navigate("Home")},
             colors = NavigationBarItemDefaults.colors(
                 indicatorColor = Color.White,
                 selectedIconColor = selectedItemColor,
@@ -188,7 +189,7 @@ fun BottomNavigationBar() {
             icon = { Icon(Icons.Filled.Favorite, contentDescription = "Favorites", tint = Color.Black) },
             label = { Text("Favorites", color = Color.Black) },
             selected = false,
-            onClick = {},
+            onClick = {navController.navigate("Favorite")},
             colors = NavigationBarItemDefaults.colors(
                 indicatorColor = Color.White,
                 selectedIconColor = selectedItemColor,
@@ -201,7 +202,7 @@ fun BottomNavigationBar() {
             icon = { Icon(Icons.Filled.Notifications, contentDescription = "Notifications", tint = Color.Black) },
             label = { Text("Notifications", color = Color.Black) },
             selected = false,
-            onClick = {},
+            onClick = {navController.navigate("Alert")},
             colors = NavigationBarItemDefaults.colors(
                 indicatorColor = Color.White,
                 selectedIconColor = selectedItemColor,
@@ -214,7 +215,7 @@ fun BottomNavigationBar() {
             icon = { Icon(Icons.Filled.Settings, contentDescription = "Settings", tint = Color.Black) },
             label = { Text("Settings", color = Color.Black) },
             selected = false,
-            onClick = {},
+            onClick = {navController.navigate("Setting")},
             colors = NavigationBarItemDefaults.colors(
                 indicatorColor = Color.White,
                 selectedIconColor = selectedItemColor,

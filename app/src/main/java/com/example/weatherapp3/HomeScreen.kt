@@ -23,13 +23,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.weatherapp3.R
 
-@Preview
 @Composable
-fun WeatherScreen() {
+fun WeatherScreen(navController: NavController) {
     Scaffold(
-        bottomBar = { BottomNavigationBar() }
+        bottomBar = { BottomNavigationBar(navController) }
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -142,7 +142,7 @@ fun WeatherRow() {
     }
 }
 @Composable
-fun BottomNavigationBar() {
+fun BottomNavigationBar(navController: NavController) {
     NavigationBar(
         containerColor = Color(0xFFC5E2EE),
         tonalElevation = 8.dp,
@@ -156,7 +156,7 @@ fun BottomNavigationBar() {
             icon = { Icon(Icons.Filled.Home, contentDescription = "Home", tint = Color.Black) },
             label = { Text("Home", color = Color.Black) },
             selected = true,
-            onClick = {},
+            onClick = {navController.navigate("Home")},
             colors = NavigationBarItemDefaults.colors(
                 indicatorColor = Color.White,
                 selectedIconColor = selectedItemColor,
@@ -169,7 +169,7 @@ fun BottomNavigationBar() {
             icon = { Icon(Icons.Filled.Favorite, contentDescription = "Favorites", tint = Color.Black) },
             label = { Text("Favorites", color = Color.Black) },
             selected = false,
-            onClick = {},
+            onClick = {navController.navigate("Favorite")},
             colors = NavigationBarItemDefaults.colors(
                 indicatorColor = Color.White,
                 selectedIconColor = selectedItemColor,
@@ -182,7 +182,7 @@ fun BottomNavigationBar() {
             icon = { Icon(Icons.Filled.Notifications, contentDescription = "Notifications", tint = Color.Black) },
             label = { Text("Notifications", color = Color.Black) },
             selected = false,
-            onClick = {},
+            onClick = {navController.navigate("Alert")},
             colors = NavigationBarItemDefaults.colors(
                 indicatorColor = Color.White,
                 selectedIconColor = selectedItemColor,
@@ -195,7 +195,7 @@ fun BottomNavigationBar() {
             icon = { Icon(Icons.Filled.Settings, contentDescription = "Settings", tint = Color.Black) },
             label = { Text("Settings", color = Color.Black) },
             selected = false,
-            onClick = {},
+            onClick = {navController.navigate("Setting")},
             colors = NavigationBarItemDefaults.colors(
                 indicatorColor = Color.White,
                 selectedIconColor = selectedItemColor,

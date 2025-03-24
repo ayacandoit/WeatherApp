@@ -16,7 +16,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
        var t= listOf{"vitnam"}
         setContent {
-            WeatherAlertsScreen()
+            Nav()
 
 
         }
