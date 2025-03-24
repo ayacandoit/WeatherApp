@@ -35,7 +35,6 @@ fun WeatherScreen() {
             modifier = Modifier
                 .fillMaxSize()
         ) {
-            // الخلفية الثابتة
             Image(
                 painter = painterResource(R.drawable.skky),
                 contentDescription = null,
@@ -44,14 +43,13 @@ fun WeatherScreen() {
                 contentScale = ContentScale.Crop
             )
 
-            // المحتوى المتحرك (قابل للتمرير)
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
                     .verticalScroll(rememberScrollState())
             ) {
-                Spacer(modifier = Modifier.height(16.dp)) // مسافة علوية
+                Spacer(modifier = Modifier.height(16.dp))
 
                 WeatherCard()
 
@@ -84,7 +82,7 @@ fun WeatherScreen() {
                     Spacer(modifier = Modifier.height(8.dp))
                 }
 
-                Spacer(modifier = Modifier.height(16.dp)) // مسافة سفلية
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }

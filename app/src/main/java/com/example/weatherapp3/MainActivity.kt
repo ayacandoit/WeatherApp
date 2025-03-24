@@ -1,7 +1,9 @@
 package com.example.weatherapp3
 
 
-import SettingsScreen
+
+import FavoriteScreen
+import WeatherAlertsScreen
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -14,7 +16,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
        var t= listOf{"vitnam"}
         setContent {
-            SettingsScreen()
+            WeatherAlertsScreen()
+
 
         }
     }

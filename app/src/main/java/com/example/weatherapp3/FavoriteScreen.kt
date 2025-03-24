@@ -26,20 +26,16 @@ import com.airbnb.lottie.compose.*
 import com.example.weatherapp3.R
 import kotlinx.coroutines.delay
 
+
 @Composable
 fun FavoriteScreen() {
     var isLoading by remember { mutableStateOf(true) }
-    var favoriteLocations by remember {
-        mutableStateOf(
-            listOf(
-                "New York", "London", "Cairo", "Paris", "Tokyo", "Berlin",
-                "Sydney", "Moscow", "Dubai", "Beijing", "Istanbul"
-            )
-        )
-    }
+    var favoriteLocations by remember { mutableStateOf(emptyList<String>()) }
 
-    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.fff))
-    val progress by animateLottieCompositionAsState(composition, iterations = LottieConstants.IterateForever)
+    val loadingComposition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.fff))
+    val emptyListComposition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.empty))
+    val loadingProgress by animateLottieCompositionAsState(loadingComposition, iterations = LottieConstants.IterateForever)
+    val emptyListProgress by animateLottieCompositionAsState(emptyListComposition, iterations = LottieConstants.IterateForever)
 
     LaunchedEffect(Unit) {
         delay(3000)
@@ -57,8 +53,8 @@ fun FavoriteScreen() {
                 contentAlignment = Alignment.Center
             ) {
                 LottieAnimation(
-                    composition = composition,
-                    progress = progress,
+                    composition = loadingComposition,
+                    progress = loadingProgress,
                     modifier = Modifier.size(300.dp)
                 )
             }
@@ -70,63 +66,75 @@ fun FavoriteScreen() {
                 modifier = Modifier.fillMaxSize()
             )
 
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(bottom = 80.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(favoriteLocations) { location ->
-                    val weatherIcon = when (location) {
-                        "New York" -> R.drawable.clearsky
-                        "London" -> R.drawable.heavyrain
-                        "Cairo" -> R.drawable.clouds
-                        "Paris" -> R.drawable.wind
-                        "Tokyo" -> R.drawable.wind
-                        else -> R.drawable.snowflake
-                    }
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp)
-                            .clip(RoundedCornerShape(12.dp)),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xB3E0F7FA))
-                    ) {
-                        Row(
+            if (favoriteLocations.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    LottieAnimation(
+                        composition = emptyListComposition,
+                        progress = emptyListProgress,
+                        modifier = Modifier.size(300.dp)
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(bottom = 80.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(favoriteLocations) { location ->
+                        val weatherIcon = when (location) {
+                            "New York" -> R.drawable.clearsky
+                            "London" -> R.drawable.heavyrain
+                            "Cairo" -> R.drawable.clouds
+                            "Paris" -> R.drawable.wind
+                            "Tokyo" -> R.drawable.wind
+                            else -> R.drawable.snowflake
+                        }
+                        Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                                .padding(8.dp)
+                                .clip(RoundedCornerShape(12.dp)),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xB3E0F7FA))
                         ) {
-                            Image(
-                                painter = painterResource(id = weatherIcon),
-                                contentDescription = "Weather Icon",
+                            Row(
                                 modifier = Modifier
-                                    .size(50.dp)
-                                    .padding(end = 8.dp)
-                            )
-                            Text(
-                                text = location,
-                                color = Color.Black,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            IconButton(onClick = {
-                                favoriteLocations = favoriteLocations - location
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Delete",
-                                    tint = Color.Gray
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Image(
+                                    painter = painterResource(id = weatherIcon),
+                                    contentDescription = "Weather Icon",
+                                    modifier = Modifier
+                                        .size(50.dp)
+                                        .padding(end = 8.dp)
                                 )
+                                Text(
+                                    text = location,
+                                    color = Color.Black,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                IconButton(onClick = {
+                                    favoriteLocations = favoriteLocations - location
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Delete",
+                                        tint = Color.Gray
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
 
-            // Bottom Navigation Bar
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)

@@ -20,68 +20,97 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.example.weatherapp3.R
+import kotlinx.coroutines.delay
 
 @Composable
 fun SettingsScreen() {
+    var isLoading by remember { mutableStateOf(true) }
     var selectedLanguage by remember { mutableStateOf("ARABIC") }
     var selectedWindSpeed by remember { mutableStateOf("IMPARIAL") }
     var selectedTemperature by remember { mutableStateOf("KELVIN") }
     var selectedLocation by remember { mutableStateOf("GPS") }
 
+    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.setting))
+    val progress by animateLottieCompositionAsState(composition, iterations = LottieConstants.IterateForever)
+
+    LaunchedEffect(Unit) {
+        delay(3000)
+        isLoading = false
+    }
+
     Box(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFC5E2EE))
     ) {
-        // Background Image
-        Image(
-            painter = painterResource(id = R.drawable.skky),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer { alpha = 0.8f }
-        )
-
-        // المحتوى فوق الصورة
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+        if (isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                Text("Settings", fontSize = 30.sp, color = Color.White, fontWeight = FontWeight.Bold)
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                SettingItem("Language", listOf("ENGLISH", "ARABIC"), selectedLanguage) { selectedLanguage = it }
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                SettingItem("Wind speed", listOf("IMPARIAL", "METRIC"), selectedWindSpeed) { selectedWindSpeed = it }
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                SettingItem("Temperature", listOf("CELSIUS", "KELVIN", "FAHRENHEIT"), selectedTemperature) { selectedTemperature = it }
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                SettingItem("Location", listOf("MAP", "GPS"), selectedLocation) { selectedLocation = it }
+                LottieAnimation(
+                    composition = composition,
+                    progress = progress,
+                    modifier = Modifier.size(300.dp)
+                )
             }
-        }
+        } else {
+            Box(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.skky),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer { alpha = 0.8f }
+                )
 
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacer(modifier = Modifier.weight(1f))
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = 16.dp),
-            contentAlignment = Alignment.BottomCenter
-        ) {
-            Bottom()
+                    Text("Settings", fontSize = 30.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    SettingItem("Language", listOf("ENGLISH", "ARABIC"), selectedLanguage) { selectedLanguage = it }
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    SettingItem("Wind speed", listOf("IMPARIAL", "METRIC"), selectedWindSpeed) { selectedWindSpeed = it }
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    SettingItem("Temperature", listOf("CELSIUS", "KELVIN", "FAHRENHEIT"), selectedTemperature) { selectedTemperature = it }
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    SettingItem("Location", listOf("MAP", "GPS"), selectedLocation) { selectedLocation = it }
+
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(8.dp),
+                    contentAlignment = Alignment.BottomCenter
+                ) {
+                    Bottom()
+                }
+            }
         }
     }
 }
+
 
 @Composable
 fun SettingItem(title: String, options: List<String>, selectedOption: String, onOptionSelected: (String) -> Unit) {
@@ -113,7 +142,7 @@ fun SettingItem(title: String, options: List<String>, selectedOption: String, on
 fun Bottom() {
     NavigationBar(
         containerColor = Color(0xFFC5E2EE),
-        tonalElevation = 8.dp,
+        //tonalElevation = 8.dp,
         modifier = Modifier
             .clip(RoundedCornerShape(20.dp))
     ) {
