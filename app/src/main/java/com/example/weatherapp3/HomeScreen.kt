@@ -1,5 +1,18 @@
 package com.example.weatherapp3
 
+import android.annotation.SuppressLint
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.location.Geocoder
+import android.location.Location
+import android.location.LocationManager
+import android.os.Bundle
+import android.provider.Settings
+import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -12,22 +25,33 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
-import com.example.weatherapp3.R
+import com.google.android.gms.location.*
+
+
 
 @Composable
-fun WeatherScreen(navController: NavController) {
+fun WeatherScreen(
+    navController: NavController,
+    location: Location?,
+    address: String,
+    showPermissionDialog: Boolean,
+    onRequestPermission: () -> Unit,
+    onDismissPermissionDialog: () -> Unit
+) {
     Scaffold(
         bottomBar = { BottomNavigationBar(navController) }
     ) { paddingValues ->
@@ -51,7 +75,10 @@ fun WeatherScreen(navController: NavController) {
             ) {
                 Spacer(modifier = Modifier.height(16.dp))
 
-                WeatherCard()
+                WeatherCard(
+                    location = location,
+                    address = address
+                )
 
                 Text(
                     text = "Today",
@@ -85,9 +112,88 @@ fun WeatherScreen(navController: NavController) {
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
+
+        if (showPermissionDialog) {
+            AlertDialog(
+                onDismissRequest = onDismissPermissionDialog,
+                title = { Text("Location Permission Required") },
+                text = { Text("This app needs location access to provide accurate weather information") },
+                confirmButton = {
+                    Button(onClick = {
+                        onRequestPermission()
+                        onDismissPermissionDialog()
+                    }) {
+                        Text("Allow")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = onDismissPermissionDialog) {
+                        Text("Deny")
+                    }
+                }
+            )
+        }
     }
 }
 
+@Composable
+fun WeatherCard(
+    location: Location?,
+    address: String
+) {
+    val temperature = location?.let { "%.1f°C".format(20.0 + it.latitude % 10) } ?: "--°C"
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFB3E5FC).copy(alpha = 0.5f)),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.clearsky),
+                contentDescription = null,
+                tint = Color(0xFFFFD700),
+                modifier = Modifier.size(100.dp)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = address,
+                color = Color.White,
+            )
+
+            Text(
+                text = temperature,
+                color = Color.White,
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
+
+            Text(
+                text = "Today",
+                color = Color.Gray,
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceAround
+            ) {
+                WeatherInfoItem(icon = R.drawable.clouds, label = "Cloud", value = "0%")
+                WeatherInfoItem(icon = R.drawable.wind, label = "Wind speed", value = "4.15 m/s")
+                WeatherInfoItem(icon = R.drawable.humidity, label = "Humidity", value = "68")
+                WeatherInfoItem(icon = R.drawable.pressure, label = "Pressure", value = "1014")
+            }
+        }
+    }
+}
 
 @Composable
 fun WeatherListItem(day: String, temperature: String, weatherCondition: String) {
@@ -125,7 +231,6 @@ fun WeatherListItem(day: String, temperature: String, weatherCondition: String) 
     }
 }
 
-
 @Composable
 fun WeatherRow() {
     LazyRow(
@@ -141,6 +246,7 @@ fun WeatherRow() {
         }
     }
 }
+
 @Composable
 fun BottomNavigationBar(navController: NavController) {
     NavigationBar(
@@ -208,59 +314,6 @@ fun BottomNavigationBar(navController: NavController) {
 }
 
 @Composable
-fun WeatherCard() {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFB3E5FC).copy(alpha = 0.5f)),
-
-        elevation = CardDefaults.cardElevation(4.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.clearsky),
-                contentDescription = null,
-                tint = Color(0xFFFFD700),
-                modifier = Modifier.size(100.dp)
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Clear Sky",
-                color = Color.White,
-            )
-
-            Text(
-                text = "61.18°F",
-                color = Color.White,
-                modifier = Modifier.padding(vertical = 4.dp)
-            )
-
-            Text(
-                text = "2024-04-09",
-                color = Color.Gray,
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceAround
-            ) {
-                WeatherInfoItem(icon = R.drawable.clouds, label = "Cloud", value = "0%")
-                WeatherInfoItem(icon = R.drawable.wind, label = "Wind speed", value = "4.15 m/s")
-                WeatherInfoItem(icon = R.drawable.humidity, label = "Humidity", value = "68")
-                WeatherInfoItem(icon = R.drawable.pressure, label = "Pressure", value = "1014")
-            }
-        }
-    }
-}@Composable
 fun WeatherItem(time: String, temperature: String, weatherCondition: String) {
     val weatherIcon = when (weatherCondition) {
         "Clear" -> R.drawable.clearsky
@@ -308,6 +361,7 @@ fun WeatherItem(time: String, temperature: String, weatherCondition: String) {
         }
     }
 }
+
 @Composable
 fun WeatherInfoItem(icon: Int, label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {

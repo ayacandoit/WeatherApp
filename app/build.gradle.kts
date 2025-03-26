@@ -59,5 +59,7 @@ dependencies {
     implementation("com.airbnb.android:lottie-compose:6.1.0")
 
     implementation ("androidx.navigation:navigation-compose:2.8.9")
+    implementation ("com.google.android.gms:play-services-location:21.0.1")
+
 
 }
