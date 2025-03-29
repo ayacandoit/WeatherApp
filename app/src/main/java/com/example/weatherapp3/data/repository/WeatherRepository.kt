@@ -1,11 +1,10 @@
-class WeatherRepository {
-    private val apiService = WeatherApi.retrofitService
+// repository/WeatherRepository.kt
+interface WeatherRepository {
+    suspend fun getCurrentWeather(lat: Double, lon: Double): Result<WeatherResponse>
+    suspend fun getForecast(lat: Double, lon: Double): Result<ForecastResponse>
 
-    suspend fun getCurrentWeather(lat: Double, lon: Double): WeatherResponse {
-        return apiService.getCurrentWeather(lat, lon)
-    }
-
-    suspend fun getForecast(lat: Double, lon: Double): ForecastResponse {
-        return apiService.getForecast(lat, lon)
+    sealed interface Result<out T> {
+        data class Success<T>(val data: T) : Result<T>
+        data class Error(val exception: Throwable) : Result<Nothing>
     }
 }

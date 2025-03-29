@@ -1,6 +1,5 @@
 package com.example.weatherapp3.data.Api
 
-import WeatherApiService
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,8 +27,8 @@ object ApiClient {
             .build()
     }
 
-    val weatherApi: WeatherApiService by lazy {
-        retrofit.create(WeatherApiService::class.java)
+    val weatherApi: WeatherApi.WeatherApiService by lazy {
+        retrofit.create(WeatherApi.WeatherApiService::class.java)
     }
 }
 @Composable
