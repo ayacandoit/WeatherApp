@@ -1,47 +1,66 @@
-package com.example.weatherapp3
+package com.example.weatherapp.ui.screens
 
-import android.annotation.SuppressLint
-import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.location.Geocoder
+import WeatherResponse
+import WeatherViewModel
 import android.location.Location
-import android.location.LocationManager
-import android.os.Bundle
-import android.provider.Settings
-import android.widget.Toast
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.google.android.gms.location.*
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.example.weatherapp3.R
 
-
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun WeatherScreen(
@@ -52,6 +71,18 @@ fun WeatherScreen(
     onRequestPermission: () -> Unit,
     onDismissPermissionDialog: () -> Unit
 ) {
+    val viewModel: WeatherViewModel = viewModel()
+    val currentWeather by viewModel.currentWeather.collectAsState()
+    val forecast by viewModel.forecast.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
+
+    LaunchedEffect(location) {
+        location?.let {
+            viewModel.fetchWeatherData(it.latitude, it.longitude)
+        }
+    }
+
     Scaffold(
         bottomBar = { BottomNavigationBar(navController) }
     ) { paddingValues ->
@@ -67,6 +98,21 @@ fun WeatherScreen(
                 contentScale = ContentScale.Crop
             )
 
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = Color.White
+                )
+            }
+
+            error?.let { errorMessage ->
+                Text(
+                    text = errorMessage,
+                    color = Color.Red,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -77,7 +123,8 @@ fun WeatherScreen(
 
                 WeatherCard(
                     location = location,
-                    address = address
+                    address = address,
+                    currentWeather = currentWeather
                 )
 
                 Text(
@@ -88,7 +135,9 @@ fun WeatherScreen(
                     modifier = Modifier.padding(16.dp)
                 )
 
-                WeatherRow()
+                currentWeather?.let { weather ->
+                    WeatherRow(weather = weather)
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -100,13 +149,31 @@ fun WeatherScreen(
                     modifier = Modifier.padding(16.dp)
                 )
 
-                repeat(5) { index ->
-                    WeatherListItem(
-                        day = "Day ${index + 1}",
-                        temperature = "${(15..25).random()}°C",
-                        weatherCondition = listOf("Clear", "Cloudy", "Rainy", "Snowy", "Windy").random()
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+                forecast?.let { forecastItems ->
+                    forecastItems.groupBy {
+                        SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                            .format(Date(it.dt * 1000))
+                    }.values.take(5).forEach { dailyForecasts ->
+                        val firstForecast = dailyForecasts.first()
+                        WeatherListItem(
+                            day = SimpleDateFormat("EEEE", Locale.getDefault())
+                                .format(Date(firstForecast.dt * 1000)),
+                            temperature = "${firstForecast.main.temp.toInt()}°C",
+                            weatherCondition = firstForecast.weather.firstOrNull()?.main ?: "Unknown",
+                            iconCode = firstForecast.weather.firstOrNull()?.icon ?: "01d"
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                } ?: run {
+                    repeat(5) { index ->
+                        WeatherListItem(
+                            day = "Day ${index + 1}",
+                            temperature = "${(15..25).random()}°C",
+                            weatherCondition = listOf("Clear", "Cloudy", "Rainy", "Snowy", "Windy").random(),
+                            iconCode = "01d"
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -139,9 +206,12 @@ fun WeatherScreen(
 @Composable
 fun WeatherCard(
     location: Location?,
-    address: String
+    address: String,
+    currentWeather: WeatherResponse?
 ) {
-    val temperature = location?.let { "%.1f°C".format(20.0 + it.latitude % 10) } ?: "--°C"
+    val temperature = currentWeather?.main?.temp?.let { "%.1f°C".format(it) } ?: "--°C"
+    val weatherCondition = currentWeather?.weather?.firstOrNull()?.main ?: "Clear"
+    val iconCode = currentWeather?.weather?.firstOrNull()?.icon ?: "01d"
 
     Card(
         modifier = Modifier
@@ -155,10 +225,8 @@ fun WeatherCard(
             modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(
-                painter = painterResource(R.drawable.clearsky),
-                contentDescription = null,
-                tint = Color(0xFFFFD700),
+            WeatherIcon(
+                iconCode = iconCode,
                 modifier = Modifier.size(100.dp)
             )
 
@@ -176,36 +244,50 @@ fun WeatherCard(
             )
 
             Text(
-                text = "Today",
+                text = weatherCondition,
                 color = Color.Gray,
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceAround
-            ) {
-                WeatherInfoItem(icon = R.drawable.clouds, label = "Cloud", value = "0%")
-                WeatherInfoItem(icon = R.drawable.wind, label = "Wind speed", value = "4.15 m/s")
-                WeatherInfoItem(icon = R.drawable.humidity, label = "Humidity", value = "68")
-                WeatherInfoItem(icon = R.drawable.pressure, label = "Pressure", value = "1014")
+            currentWeather?.let { weather ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceAround
+                ) {
+                    WeatherInfoItem(
+                        icon = R.drawable.clouds,
+                        label = "Cloud",
+                        value = "${weather.clouds.all}%"
+                    )
+                    WeatherInfoItem(
+                        icon = R.drawable.wind,
+                        label = "Wind speed",
+                        value = "${weather.wind.speed} m/s"
+                    )
+                    WeatherInfoItem(
+                        icon = R.drawable.humidity,
+                        label = "Humidity",
+                        value = "${weather.main.humidity}%"
+                    )
+                    WeatherInfoItem(
+                        icon = R.drawable.pressure,
+                        label = "Pressure",
+                        value = "${weather.main.pressure} hPa"
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-fun WeatherListItem(day: String, temperature: String, weatherCondition: String) {
-    val weatherIcon = when (weatherCondition) {
-        "Clear" -> R.drawable.clearsky
-        "Cloudy" -> R.drawable.clouds
-        "Rainy" -> R.drawable.heavyrain
-        "Snowy" -> R.drawable.snowflake
-        "Windy" -> R.drawable.wind
-        else -> R.drawable.wind
-    }
-
+fun WeatherListItem(
+    day: String,
+    temperature: String,
+    weatherCondition: String,
+    iconCode: String
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -219,9 +301,8 @@ fun WeatherListItem(day: String, temperature: String, weatherCondition: String) 
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Image(
-                painter = painterResource(weatherIcon),
-                contentDescription = null,
+            WeatherIcon(
+                iconCode = iconCode,
                 modifier = Modifier.size(40.dp)
             )
             Text(text = day, color = Color.Black, fontSize = 20.sp, fontWeight = FontWeight.Bold)
@@ -232,98 +313,28 @@ fun WeatherListItem(day: String, temperature: String, weatherCondition: String) 
 }
 
 @Composable
-fun WeatherRow() {
+fun WeatherRow(weather: WeatherResponse) {
     LazyRow(
         modifier = Modifier.padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(5) { index ->
+            val hour = (index + 1) * 3
             WeatherItem(
-                time = "${(index + 6) * 3}:00",
-                temperature = "${(10..15).random()}.0°C",
-                weatherCondition = listOf("Clear", "Cloudy", "Rainy", "Snowy", "Windy").random()
+                time = "$hour:00",
+                temperature = "${weather.main.temp.toInt() + (index - 2)}°C",
+                iconCode = weather.weather.firstOrNull()?.icon ?: "01d"
             )
         }
     }
 }
 
 @Composable
-fun BottomNavigationBar(navController: NavController) {
-    NavigationBar(
-        containerColor = Color(0xFFC5E2EE),
-        tonalElevation = 8.dp,
-        modifier = Modifier
-            .clip(RoundedCornerShape(20.dp))
-    ) {
-        val selectedItemColor = Color.Black
-        val unselectedItemColor = Color.LightGray
-
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.Home, contentDescription = "Home", tint = Color.Black) },
-            label = { Text("Home", color = Color.Black) },
-            selected = true,
-            onClick = {navController.navigate("Home")},
-            colors = NavigationBarItemDefaults.colors(
-                indicatorColor = Color.White,
-                selectedIconColor = selectedItemColor,
-                unselectedIconColor = unselectedItemColor,
-                selectedTextColor = selectedItemColor,
-                unselectedTextColor = unselectedItemColor
-            )
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.Favorite, contentDescription = "Favorites", tint = Color.Black) },
-            label = { Text("Favorites", color = Color.Black) },
-            selected = false,
-            onClick = {navController.navigate("Favorite")},
-            colors = NavigationBarItemDefaults.colors(
-                indicatorColor = Color.White,
-                selectedIconColor = selectedItemColor,
-                unselectedIconColor = unselectedItemColor,
-                selectedTextColor = selectedItemColor,
-                unselectedTextColor = unselectedItemColor
-            )
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.Notifications, contentDescription = "Notifications", tint = Color.Black) },
-            label = { Text("Notifications", color = Color.Black) },
-            selected = false,
-            onClick = {navController.navigate("Alert")},
-            colors = NavigationBarItemDefaults.colors(
-                indicatorColor = Color.White,
-                selectedIconColor = selectedItemColor,
-                unselectedIconColor = unselectedItemColor,
-                selectedTextColor = selectedItemColor,
-                unselectedTextColor = unselectedItemColor
-            )
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.Settings, contentDescription = "Settings", tint = Color.Black) },
-            label = { Text("Settings", color = Color.Black) },
-            selected = false,
-            onClick = {navController.navigate("Setting")},
-            colors = NavigationBarItemDefaults.colors(
-                indicatorColor = Color.White,
-                selectedIconColor = selectedItemColor,
-                unselectedIconColor = unselectedItemColor,
-                selectedTextColor = selectedItemColor,
-                unselectedTextColor = unselectedItemColor
-            )
-        )
-    }
-}
-
-@Composable
-fun WeatherItem(time: String, temperature: String, weatherCondition: String) {
-    val weatherIcon = when (weatherCondition) {
-        "Clear" -> R.drawable.clearsky
-        "Cloudy" -> R.drawable.clouds
-        "Rainy" -> R.drawable.heavyrain
-        "Snowy" -> R.drawable.snowflake
-        "Windy" -> R.drawable.wind
-        else -> R.drawable.wind
-    }
-
+fun WeatherItem(
+    time: String,
+    temperature: String,
+    iconCode: String
+) {
     Card(
         modifier = Modifier
             .width(80.dp)
@@ -346,10 +357,8 @@ fun WeatherItem(time: String, temperature: String, weatherCondition: String) {
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Icon(
-                painter = painterResource(weatherIcon),
-                contentDescription = null,
-                tint = Color.Unspecified,
+            WeatherIcon(
+                iconCode = iconCode,
                 modifier = Modifier.size(40.dp)
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -359,6 +368,88 @@ fun WeatherItem(time: String, temperature: String, weatherCondition: String) {
                 fontSize = 16.sp
             )
         }
+    }
+}
+
+@Composable
+fun WeatherIcon(iconCode: String, modifier: Modifier = Modifier) {
+    val iconUrl = "https://openweathermap.org/img/wn/$iconCode@2x.png"
+
+    AsyncImage(
+        model = ImageRequest.Builder(LocalContext.current)
+            .data(iconUrl)
+            .crossfade(true)
+            .build(),
+        contentDescription = null,
+        modifier = modifier,
+        colorFilter = if (iconCode.endsWith("n"))
+            ColorFilter.tint(Color(0xFF90CAF9)) else null
+    )
+}
+
+@Composable
+fun BottomNavigationBar(navController: NavController) {
+    NavigationBar(
+        containerColor = Color(0xFFC5E2EE),
+        tonalElevation = 8.dp,
+        modifier = Modifier
+            .clip(RoundedCornerShape(20.dp))
+    ) {
+        val selectedItemColor = Color.Black
+        val unselectedItemColor = Color.LightGray
+
+        NavigationBarItem(
+            icon = { Icon(Icons.Filled.Home, contentDescription = "Home", tint = Color.Black) },
+            label = { Text("Home", color = Color.Black) },
+            selected = true,
+            onClick = { navController.navigate("Home") },
+            colors = NavigationBarItemDefaults.colors(
+                indicatorColor = Color.White,
+                selectedIconColor = selectedItemColor,
+                unselectedIconColor = unselectedItemColor,
+                selectedTextColor = selectedItemColor,
+                unselectedTextColor = unselectedItemColor
+            )
+        )
+        NavigationBarItem(
+            icon = { Icon(Icons.Filled.Favorite, contentDescription = "Favorites", tint = Color.Black) },
+            label = { Text("Favorites", color = Color.Black) },
+            selected = false,
+            onClick = { navController.navigate("Favorite") },
+            colors = NavigationBarItemDefaults.colors(
+                indicatorColor = Color.White,
+                selectedIconColor = selectedItemColor,
+                unselectedIconColor = unselectedItemColor,
+                selectedTextColor = selectedItemColor,
+                unselectedTextColor = unselectedItemColor
+            )
+        )
+        NavigationBarItem(
+            icon = { Icon(Icons.Filled.Notifications, contentDescription = "Notifications", tint = Color.Black) },
+            label = { Text("Notifications", color = Color.Black) },
+            selected = false,
+            onClick = { navController.navigate("Alert") },
+            colors = NavigationBarItemDefaults.colors(
+                indicatorColor = Color.White,
+                selectedIconColor = selectedItemColor,
+                unselectedIconColor = unselectedItemColor,
+                selectedTextColor = selectedItemColor,
+                unselectedTextColor = unselectedItemColor
+            )
+        )
+        NavigationBarItem(
+            icon = { Icon(Icons.Filled.Settings, contentDescription = "Settings", tint = Color.Black) },
+            label = { Text("Settings", color = Color.Black) },
+            selected = false,
+            onClick = { navController.navigate("Setting") },
+            colors = NavigationBarItemDefaults.colors(
+                indicatorColor = Color.White,
+                selectedIconColor = selectedItemColor,
+                unselectedIconColor = unselectedItemColor,
+                selectedTextColor = selectedItemColor,
+                unselectedTextColor = unselectedItemColor
+            )
+        )
     }
 }
 
