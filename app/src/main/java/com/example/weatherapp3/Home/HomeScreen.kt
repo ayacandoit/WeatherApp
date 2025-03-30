@@ -387,8 +387,8 @@ fun WeatherIcon(iconCode: String, modifier: Modifier = Modifier) {
             .build(),
         contentDescription = null,
         modifier = modifier,
-        colorFilter = if (iconCode.endsWith("n"))
-            ColorFilter.tint(Color(0xFF90CAF9)) else null
+      //  colorFilter = if (iconCode.endsWith("n"))
+          //  ColorFilter.tint(Color(0xFF90CAF9)) else null
     )
 }
 
