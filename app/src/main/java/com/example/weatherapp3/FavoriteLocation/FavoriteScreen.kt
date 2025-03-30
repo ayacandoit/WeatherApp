@@ -22,33 +22,33 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import com.airbnb.lottie.compose.*
+import com.example.weatherapp3.FavoriteLocation.FavoriteViewModel
 import com.example.weatherapp3.R
+import com.example.weatherapp3.data.LocalDataSource.AppDatabase
+import com.example.weatherapp3.data.repository.FavoriteRepository
 import kotlinx.coroutines.delay
-
 
 @Composable
 fun FavoriteScreen(navController: NavController) {
-    var isLoading by remember { mutableStateOf(true) }
-    var favoriteLocations by remember { mutableStateOf(emptyList<String>()) }
+    val context = LocalContext.current
+    val db = remember { AppDatabase.getDatabase(context) }
+    val repository = remember { FavoriteRepository(db.favoriteDao()) }
+    val viewModel = remember { FavoriteViewModel(repository) }
 
     val loadingComposition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.fff))
     val emptyListComposition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.empty))
     val loadingProgress by animateLottieCompositionAsState(loadingComposition, iterations = LottieConstants.IterateForever)
     val emptyListProgress by animateLottieCompositionAsState(emptyListComposition, iterations = LottieConstants.IterateForever)
 
-    LaunchedEffect(Unit) {
-        delay(3000)
-        isLoading = false
-    }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFC5E2EE))
     ) {
-        if (isLoading) {
+        if (viewModel.isLoading) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -67,7 +67,7 @@ fun FavoriteScreen(navController: NavController) {
                 modifier = Modifier.fillMaxSize()
             )
 
-            if (favoriteLocations.isEmpty()) {
+            if (viewModel.showEmptyState) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -85,8 +85,8 @@ fun FavoriteScreen(navController: NavController) {
                         .padding(bottom = 80.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(favoriteLocations) { location ->
-                        val weatherIcon = when (location) {
+                    items(viewModel.favoriteLocations) { location ->
+                        val weatherIcon = when (location.name) {
                             "New York" -> R.drawable.clearsky
                             "London" -> R.drawable.heavyrain
                             "Cairo" -> R.drawable.clouds
@@ -116,14 +116,12 @@ fun FavoriteScreen(navController: NavController) {
                                         .padding(end = 8.dp)
                                 )
                                 Text(
-                                    text = location,
+                                    text = location.name,
                                     color = Color.Black,
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold
                                 )
-                                IconButton(onClick = {
-                                    favoriteLocations = favoriteLocations - location
-                                }) {
+                                IconButton(onClick = { viewModel.deleteLocation(location) }) {
                                     Icon(
                                         imageVector = Icons.Default.Delete,
                                         contentDescription = "Delete",
@@ -141,11 +139,11 @@ fun FavoriteScreen(navController: NavController) {
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
             ) {
-                BottomNavigat(navController )
+                BottomNavigat(navController)
             }
 
             FloatingActionButton(
-                onClick = {  },
+                onClick = { navController.navigate("MapScreen") },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .offset(y = (-120).dp),
@@ -158,9 +156,16 @@ fun FavoriteScreen(navController: NavController) {
                 )
             }
         }
+
+        viewModel.errorMessage?.let { message ->
+            Snackbar(
+                modifier = Modifier.align(Alignment.TopCenter)
+            ) {
+                Text(text = message, color = Color.Red)
+            }
+        }
     }
 }
-
 @Composable
 fun BottomNavigat(navController: NavController) {
     NavigationBar(
@@ -226,4 +231,3 @@ fun BottomNavigat(navController: NavController) {
         )
     }
 }
-
