@@ -1,4 +1,3 @@
-package com.example.weatherapp3.FavoriteLocation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -43,7 +42,6 @@ import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.rememberCameraPositionState
-// Add these imports at the top of your MapScreen.kt file
 import com.google.maps.android.compose.CameraPositionState
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.Marker
@@ -64,21 +62,18 @@ fun MapScreen(
     onLocationSaved: (FavoriteLocation) -> Unit
 ) {
     val context = LocalContext.current
-    // Initialize Places API client
     if (!Places.isInitialized()) {
         Places.initialize(context, "AIzaSyAAtHDDpgIrJdxASUWhG6YQNeuwxnhfHj0")
     }
     val placesClient = remember { Places.createClient(context) }
 
-    // State variables
     var searchQuery by remember { mutableStateOf("") }
     var predictions by remember { mutableStateOf<List<AutocompletePrediction>>(emptyList()) }
     var selectedLocation by remember { mutableStateOf<LatLng?>(null) }
     val cameraPositionState = rememberCameraPositionState()
 
-    // Search predictions effect
     LaunchedEffect(searchQuery) {
-        if (searchQuery.length > 3) {
+        if (searchQuery.length > 2) {
             try {
                 val request = FindAutocompletePredictionsRequest.builder()
                     .setQuery(searchQuery)
@@ -95,7 +90,6 @@ fun MapScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Google Map
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
@@ -112,13 +106,14 @@ fun MapScreen(
             }
         }
 
-        // Search UI
         Column(
+
             modifier = Modifier
                 .padding(16.dp)
                 .fillMaxWidth()
         ) {
-            // Search Input
+            Spacer(modifier = Modifier.height(16.dp))
+
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
@@ -131,7 +126,6 @@ fun MapScreen(
                 )
             )
 
-            // Search Predictions
             if (predictions.isNotEmpty()) {
                 PredictionsList(
                     predictions = predictions,
@@ -159,7 +153,6 @@ fun MapScreen(
             }
         }
 
-        // Save Button
         FloatingActionButton(
             onClick = {
                 selectedLocation?.let { latLng ->

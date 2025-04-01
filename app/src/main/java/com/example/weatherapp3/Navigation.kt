@@ -1,6 +1,7 @@
 package com.example.weatherapp3
 
 import FavoriteScreen
+import MapScreen
 import SettingsScreen
 import WeatherAlertsScreen
 import android.location.Location
@@ -14,7 +15,6 @@ import androidx.navigation.compose.rememberNavController
 import com.example.weatherapp.ui.screens.WeatherScreen
 import com.example.weatherapp3.FavoriteLocation.FavoriteViewModel
 import com.example.weatherapp3.FavoriteLocation.FavoriteViewModelFactory
-import com.example.weatherapp3.FavoriteLocation.MapScreen
 import com.example.weatherapp3.data.LocalDataSource.AppDatabase
 import com.example.weatherapp3.data.repository.FavoriteRepository
 
