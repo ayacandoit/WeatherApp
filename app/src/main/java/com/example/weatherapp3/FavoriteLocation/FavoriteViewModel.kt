@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.weatherapp3.data.models.FavoriteLocation
 import com.example.weatherapp3.data.repository.FavoriteRepository
@@ -14,57 +15,67 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 
 import androidx.lifecycle.viewModelScope
+import com.example.weatherapp3.data.repository.IFavoriteRepository
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
-class FavoriteViewModel(private val repository: FavoriteRepository) : ViewModel() {
-    var isLoading by mutableStateOf(true)
-        private set
+class FavoriteViewModel(repository: IFavoriteRepository) : ViewModel() {
+    private val _locations = MutableStateFlow<List<FavoriteLocation>>(emptyList())
+    val locations: StateFlow<List<FavoriteLocation>> = _locations
 
-    var favoriteLocations by mutableStateOf(emptyList<FavoriteLocation>())
-        private set
-
-    var showEmptyState by mutableStateOf(false)
-        private set
-
-    var errorMessage by mutableStateOf<String?>(null)
-        private set
+    private val _state = MutableStateFlow<UIState>(UIState.Loading)
+    val state: StateFlow<UIState> = _state
 
     init {
-        loadLocations()
+        loadLocations(repository)
     }
 
-    private fun loadLocations() {
+    private fun loadLocations(repository: IFavoriteRepository) {
         viewModelScope.launch {
-            try {
-                repository.allLocations.collect { locations ->
-                    isLoading = false
-                    favoriteLocations = locations
-                    showEmptyState = locations.isEmpty()
+            repository.getAllLocations()
+                .catch { e ->
+                    _state.value = UIState.Error(e.message ?: "Unknown error")
                 }
-            } catch (e: Exception) {
-                isLoading = false
-                errorMessage = "Failed to load locations: ${e.message}"
-            }
+                .collect { locations ->
+                    _locations.value = locations
+                    _state.value = if (locations.isEmpty()) UIState.Empty else UIState.Success
+                }
         }
     }
 
-    fun addLocation(location: FavoriteLocation) {
+    fun addLocation(repository: IFavoriteRepository, location: FavoriteLocation) {
         viewModelScope.launch {
             try {
                 repository.addLocation(location)
             } catch (e: Exception) {
-                errorMessage = "Failed to save location: ${e.message}"
+                _state.value = UIState.Error("Failed to save location")
             }
         }
     }
 
-    fun deleteLocation(location: FavoriteLocation) {
+    fun removeLocation(repository: IFavoriteRepository, location: FavoriteLocation) {
         viewModelScope.launch {
             try {
                 repository.removeLocation(location)
             } catch (e: Exception) {
-                errorMessage = "Failed to delete location: ${e.message}"
+                _state.value = UIState.Error("Failed to delete location")
             }
         }
+    }
+
+    sealed class UIState {
+        object Loading : UIState()
+        object Success : UIState()
+        object Empty : UIState()
+        data class Error(val message: String) : UIState()
+    }
+}
+
+class FavoriteViewModelFactory(private val repository: IFavoriteRepository) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(FavoriteViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return FavoriteViewModel(repository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

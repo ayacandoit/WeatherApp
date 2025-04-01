@@ -28,140 +28,143 @@ import com.airbnb.lottie.compose.*
 import com.example.weatherapp3.FavoriteLocation.FavoriteViewModel
 import com.example.weatherapp3.R
 import com.example.weatherapp3.data.LocalDataSource.AppDatabase
+import com.example.weatherapp3.data.models.FavoriteLocation
 import com.example.weatherapp3.data.repository.FavoriteRepository
+import com.example.weatherapp3.data.repository.IFavoriteRepository
 import kotlinx.coroutines.delay
-
 @Composable
 fun FavoriteScreen(navController: NavController) {
     val context = LocalContext.current
     val db = remember { AppDatabase.getDatabase(context) }
     val repository = remember { FavoriteRepository(db.favoriteDao()) }
     val viewModel = remember { FavoriteViewModel(repository) }
+    val state by viewModel.state.collectAsState()
+    val locations by viewModel.locations.collectAsState()
 
     val loadingComposition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.fff))
     val emptyListComposition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.empty))
-    val loadingProgress by animateLottieCompositionAsState(loadingComposition, iterations = LottieConstants.IterateForever)
-    val emptyListProgress by animateLottieCompositionAsState(emptyListComposition, iterations = LottieConstants.IterateForever)
+    val loadingProgress by animateLottieCompositionAsState(loadingComposition)
+    val emptyListProgress by animateLottieCompositionAsState(emptyListComposition)
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFC5E2EE))
     ) {
-        if (viewModel.isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                LottieAnimation(
-                    composition = loadingComposition,
-                    progress = loadingProgress,
-                    modifier = Modifier.size(300.dp)
-                )
-            }
-        } else {
-            Image(
-                painter = painterResource(R.drawable.skky),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
-
-            if (viewModel.showEmptyState) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
+        when (state) {
+            is FavoriteViewModel.UIState.Loading -> {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     LottieAnimation(
-                        composition = emptyListComposition,
-                        progress = emptyListProgress,
+                        composition = loadingComposition,
+                        progress = { loadingProgress },
                         modifier = Modifier.size(300.dp)
                     )
                 }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = 80.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(viewModel.favoriteLocations) { location ->
-                        val weatherIcon = when (location.name) {
-                            "New York" -> R.drawable.clearsky
-                            "London" -> R.drawable.heavyrain
-                            "Cairo" -> R.drawable.clouds
-                            "Paris" -> R.drawable.wind
-                            "Tokyo" -> R.drawable.wind
-                            else -> R.drawable.snowflake
-                        }
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp)
-                                .clip(RoundedCornerShape(12.dp)),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xB3E0F7FA))
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Image(
-                                    painter = painterResource(id = weatherIcon),
-                                    contentDescription = "Weather Icon",
-                                    modifier = Modifier
-                                        .size(50.dp)
-                                        .padding(end = 8.dp)
-                                )
-                                Text(
-                                    text = location.name,
-                                    color = Color.Black,
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                IconButton(onClick = { viewModel.deleteLocation(location) }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Delete,
-                                        contentDescription = "Delete",
-                                        tint = Color.Gray
-                                    )
-                                }
-                            }
-                        }
-                    }
+            }
+            is FavoriteViewModel.UIState.Empty -> {
+                Image(
+                    painter = painterResource(R.drawable.skky),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    LottieAnimation(
+                        composition = emptyListComposition,
+                        progress = { emptyListProgress },
+                        modifier = Modifier.size(300.dp)
+                    )
                 }
             }
-
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-            ) {
-                BottomNavigat(navController)
-            }
-
-            FloatingActionButton(
-                onClick = { navController.navigate("MapScreen") },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .offset(y = (-120).dp),
-                containerColor = Color.Red
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Favorite,
-                    contentDescription = "Favorite",
-                    tint = Color.White
+            is FavoriteViewModel.UIState.Success -> {
+                Image(
+                    painter = painterResource(R.drawable.skky),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
                 )
+                LocationsList(locations, repository, viewModel)
+            }
+            is FavoriteViewModel.UIState.Error -> {
+                // Show error state
             }
         }
 
-        viewModel.errorMessage?.let { message ->
-            Snackbar(
-                modifier = Modifier.align(Alignment.TopCenter)
-            ) {
-                Text(text = message, color = Color.Red)
+        FloatingActionButton(
+            onClick = { navController.navigate("MapScreen") },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .offset(y = (-120).dp),
+            containerColor = Color.Red
+        ) {
+            Icon(Icons.Default.Favorite, "Add Location", tint = Color.White)
+        }
+
+        BottomNavigat(navController)
+    }
+}
+
+@Composable
+private fun LocationsList(
+    locations: List<FavoriteLocation>,
+    repository: IFavoriteRepository,
+    viewModel: FavoriteViewModel
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(bottom = 80.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(locations) { location ->
+            FavoriteLocationItem(location) {
+                viewModel.removeLocation(repository, it)
+            }
+        }
+    }
+}
+
+@Composable
+private fun FavoriteLocationItem(
+    location: FavoriteLocation,
+    onDelete: (FavoriteLocation) -> Unit
+) {
+    val weatherIcon = when (location.name.lowercase()) {
+        "new york" -> R.drawable.clearsky
+        "london" -> R.drawable.heavyrain
+        "cairo" -> R.drawable.clouds
+        "paris" -> R.drawable.wind
+        "tokyo" -> R.drawable.wind
+        else -> R.drawable.snowflake
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+            .clip(RoundedCornerShape(12.dp)),
+        colors = CardDefaults.cardColors(containerColor = Color(0xB3E0F7FA))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Image(
+                painter = painterResource(id = weatherIcon),
+                contentDescription = "Weather Icon",
+                modifier = Modifier.size(50.dp)
+            )
+            Text(
+                text = location.name,
+                color = Color.Black,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold
+            )
+            IconButton(onClick = { onDelete(location) }) {
+                Icon(Icons.Default.Delete, "Delete", tint = Color.Gray)
             }
         }
     }

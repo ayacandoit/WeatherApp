@@ -1,4 +1,3 @@
-// viewmodel/WeatherViewModel.kt
 import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.ViewModel
@@ -15,7 +14,6 @@ class WeatherViewModel(
     private val repository: WeatherRepository
 ) : ViewModel() {
 
-    // UI State
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 

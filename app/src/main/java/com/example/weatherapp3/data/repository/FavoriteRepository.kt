@@ -4,10 +4,8 @@ import com.example.weatherapp3.data.LocalDataSource.FavoriteDao
 import com.example.weatherapp3.data.models.FavoriteLocation
 import kotlinx.coroutines.flow.Flow
 
-class FavoriteRepository(private val dao: FavoriteDao) {
-    val allLocations: Flow<List<FavoriteLocation>> = dao.getAllLocations()
-
-    suspend fun addLocation(location: FavoriteLocation) = dao.insertLocation(location)
-
-    suspend fun removeLocation(location: FavoriteLocation) = dao.deleteLocation(location)
+interface IFavoriteRepository {
+    fun getAllLocations(): Flow<List<FavoriteLocation>>
+    suspend fun addLocation(location: FavoriteLocation)
+    suspend fun removeLocation(location: FavoriteLocation)
 }
