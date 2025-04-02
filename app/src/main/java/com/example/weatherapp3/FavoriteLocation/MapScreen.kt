@@ -1,5 +1,3 @@
-
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,7 +31,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.weatherapp3.data.models.FavoriteLocation
-import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.Places
@@ -42,20 +39,15 @@ import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.rememberCameraPositionState
-import com.google.maps.android.compose.CameraPositionState
-import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
-
-import android.content.Context
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
+import android.location.Geocoder
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.items
-
 import kotlinx.coroutines.tasks.await
+import java.util.Locale
 
 @Composable
 fun MapScreen(
@@ -71,6 +63,7 @@ fun MapScreen(
     var searchQuery by remember { mutableStateOf("") }
     var predictions by remember { mutableStateOf<List<AutocompletePrediction>>(emptyList()) }
     var selectedLocation by remember { mutableStateOf<LatLng?>(null) }
+    var locationName by remember { mutableStateOf("Custom Location") }
     val cameraPositionState = rememberCameraPositionState()
 
     LaunchedEffect(searchQuery) {
@@ -90,25 +83,39 @@ fun MapScreen(
         }
     }
 
+    LaunchedEffect(selectedLocation) {
+        selectedLocation?.let { latLng ->
+            try {
+                val geocoder = Geocoder(context, Locale.getDefault())
+                val addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
+                locationName = addresses?.firstOrNull()?.let { address ->
+                    address.locality ?: address.adminArea ?: "Custom Location"
+                } ?: "Custom Location"
+                searchQuery = locationName
+            } catch (e: Exception) {
+                locationName = "Custom Location"
+                searchQuery = locationName
+            }
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
             onMapClick = { latLng ->
                 selectedLocation = latLng
-                searchQuery = "Selected Location"
             }
         ) {
             selectedLocation?.let { latLng ->
                 Marker(
                     state = MarkerState(position = latLng),
-                    title = searchQuery.ifEmpty { "Custom Location" }
+                    title = locationName
                 )
             }
         }
 
         Column(
-
             modifier = Modifier
                 .padding(16.dp)
                 .fillMaxWidth()
@@ -140,7 +147,8 @@ fun MapScreen(
                         ).addOnSuccessListener { response ->
                             val place = response.place
                             selectedLocation = place.latLng
-                            searchQuery = place.name ?: "Selected Location"
+                            locationName = place.name ?: "Custom Location"
+                            searchQuery = locationName
                             predictions = emptyList()
                             cameraPositionState.position = CameraPosition.fromLatLngZoom(
                                 place.latLng!!,
@@ -156,8 +164,6 @@ fun MapScreen(
 
         FloatingActionButton(
             onClick = {
-                val locationName = if (searchQuery.isNotEmpty()) searchQuery else "custom location"
-
                 selectedLocation?.let { latLng ->
                     onLocationSaved(
                         FavoriteLocation(
