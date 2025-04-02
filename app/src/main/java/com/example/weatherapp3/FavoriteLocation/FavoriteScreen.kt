@@ -1,5 +1,6 @@
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -83,7 +84,16 @@ fun FavoriteScreen(navController: NavController) {
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )
-                LocationsList(locations, repository, viewModel)
+                LocationsList(
+                    locations = locations,
+                    repository = repository,
+                    viewModel = viewModel,
+                    onItemClick = { location ->
+                        navController.navigate(
+                            "weather/${location.latitude}/${location.longitude}/${location.name}"
+                        )
+                    }
+                )
             }
             is FavoriteViewModel.UIState.Error -> {
                 // Show error state
@@ -108,7 +118,9 @@ fun FavoriteScreen(navController: NavController) {
 private fun LocationsList(
     locations: List<FavoriteLocation>,
     repository: IFavoriteRepository,
-    viewModel: FavoriteViewModel
+    viewModel: FavoriteViewModel,
+    onItemClick: (FavoriteLocation) -> Unit
+
 ) {
     LazyColumn(
         modifier = Modifier
@@ -117,9 +129,11 @@ private fun LocationsList(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(locations) { location ->
-            FavoriteLocationItem(location) {
-                viewModel.removeLocation(repository, it)
-            }
+            FavoriteLocationItem(
+                location = location,
+                onDelete = { viewModel.removeLocation(repository, it) },
+                onItemClick = onItemClick
+            )
         }
     }
 }
@@ -127,7 +141,9 @@ private fun LocationsList(
 @Composable
 private fun FavoriteLocationItem(
     location: FavoriteLocation,
-    onDelete: (FavoriteLocation) -> Unit
+    onDelete: (FavoriteLocation) -> Unit,
+    onItemClick: (FavoriteLocation) -> Unit
+
 ) {
     val weatherIcon = when (location.name.lowercase()) {
         "new york" -> R.drawable.clearsky
@@ -142,7 +158,7 @@ private fun FavoriteLocationItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
-            .clip(RoundedCornerShape(12.dp)),
+            .clip(RoundedCornerShape(12.dp)).clickable { onItemClick(location)},
         colors = CardDefaults.cardColors(containerColor = Color(0xB3E0F7FA))
     ) {
         Row(
@@ -157,12 +173,19 @@ private fun FavoriteLocationItem(
                 contentDescription = "Weather Icon",
                 modifier = Modifier.size(50.dp)
             )
-            Text(
-                text = location.name,
-                color = Color.Black,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = location.name,
+                    color = Color.Black,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "${location.latitude}, ${location.longitude}",
+                    color = Color.Gray,
+                    fontSize = 12.sp
+                )}
             IconButton(onClick = { onDelete(location) }) {
                 Icon(Icons.Default.Delete, "Delete", tint = Color.Gray)
             }

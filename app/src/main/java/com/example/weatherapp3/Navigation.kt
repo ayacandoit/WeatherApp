@@ -9,9 +9,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.weatherapp.ui.screens.WeatherScreen
 import com.example.weatherapp3.FavoriteLocation.FavoriteViewModel
 import com.example.weatherapp3.FavoriteLocation.FavoriteViewModelFactory
@@ -19,8 +21,6 @@ import com.example.weatherapp3.data.LocalDataSource.AppDatabase
 import com.example.weatherapp3.data.repository.FavoriteRepository
 
 
-
-// Navigation.kt
 @Composable
 fun Nav(
     onRequestPermission: () -> Unit,
@@ -35,14 +35,19 @@ fun Nav(
     val db = remember { AppDatabase.getDatabase(context) }
     val repository = remember { FavoriteRepository(db.favoriteDao()) }
 
-    NavHost(navController = navController, startDestination = "Splash") {
-        composable(route = "Splash") {
+    NavHost(
+        navController = navController,
+        startDestination = "Splash"
+    ) {
+        composable("Splash") {
             SplashScreen(navController)
         }
-        composable(route = "Favorite") {
+
+        composable("Favorite") {
             FavoriteScreen(navController)
         }
-        composable(route = "MapScreen") {
+
+        composable("MapScreen") {
             val viewModel: FavoriteViewModel = viewModel(
                 factory = FavoriteViewModelFactory(repository)
             )
@@ -53,10 +58,39 @@ fun Nav(
                 }
             )
         }
-        composable(route = "Alert") {
+
+        composable("Alert") {
             WeatherAlertsScreen(navController)
         }
-        composable(route = "Home") {
+
+        composable(
+            "weather/{lat}/{lon}/{name}",
+            arguments = listOf(
+                navArgument("lat") { type = NavType.FloatType },
+                navArgument("lon") { type = NavType.FloatType },
+                navArgument("name") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val lat = backStackEntry.arguments?.getFloat("lat")?.toDouble()
+            val lon = backStackEntry.arguments?.getFloat("lon")?.toDouble()
+            val name = backStackEntry.arguments?.getString("name") ?: ""
+
+            val customLocation = Location(name).apply {
+                latitude = lat ?: 0.0
+                longitude = lon ?: 0.0
+            }
+
+            WeatherScreen(
+                navController = navController,
+                location = customLocation,
+                address = name,
+                showPermissionDialog = false,
+                onRequestPermission = onRequestPermission,
+                onDismissPermissionDialog = onDismissPermissionDialog
+            )
+        }
+
+        composable("Home") {
             WeatherScreen(
                 navController = navController,
                 location = currentLocation,
@@ -66,7 +100,8 @@ fun Nav(
                 onDismissPermissionDialog = onDismissPermissionDialog
             )
         }
-        composable(route = "Setting") {
+
+        composable("Setting") {
             SettingsScreen(navController)
         }
     }

@@ -83,8 +83,8 @@ fun WeatherScreen(
     val error by viewModel.error.collectAsState()
 
     LaunchedEffect(location) {
-        location?.let {
-            viewModel.fetchWeatherData(it.latitude, it.longitude)
+        if (location != null) {
+            viewModel.fetchWeatherData(location.latitude, location.longitude)
         }
     }
 
@@ -387,8 +387,8 @@ fun WeatherIcon(iconCode: String, modifier: Modifier = Modifier) {
             .build(),
         contentDescription = null,
         modifier = modifier,
-      //  colorFilter = if (iconCode.endsWith("n"))
-          //  ColorFilter.tint(Color(0xFF90CAF9)) else null
+        //  colorFilter = if (iconCode.endsWith("n"))
+        //  ColorFilter.tint(Color(0xFF90CAF9)) else null
     )
 }
 

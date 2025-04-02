@@ -1,4 +1,3 @@
-// model/WeatherData.kt
 data class WeatherResponse(
     val coord: Coord,
     val weather: List<Weather>,

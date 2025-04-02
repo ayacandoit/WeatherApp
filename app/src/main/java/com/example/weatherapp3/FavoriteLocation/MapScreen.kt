@@ -1,4 +1,5 @@
 
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -155,10 +156,12 @@ fun MapScreen(
 
         FloatingActionButton(
             onClick = {
+                val locationName = if (searchQuery.isNotEmpty()) searchQuery else "custom location"
+
                 selectedLocation?.let { latLng ->
                     onLocationSaved(
                         FavoriteLocation(
-                            name = searchQuery.ifEmpty { "Custom Location" },
+                            name = locationName,
                             latitude = latLng.latitude,
                             longitude = latLng.longitude
                         )

@@ -9,5 +9,8 @@ data class FavoriteLocation(
     val name: String,
     val latitude: Double,
     val longitude: Double,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+
+
+
 )

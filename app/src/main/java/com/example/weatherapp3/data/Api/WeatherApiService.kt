@@ -3,7 +3,6 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.Query
 
-// network/WeatherApi.kt
 object WeatherApi {
     private const val BASE_URL = "https://api.openweathermap.org/data/2.5/"
 
