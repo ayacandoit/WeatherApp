@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
+import com.airbnb.lottie.LottieComposition
 import com.airbnb.lottie.compose.*
 import com.example.weatherapp3.FavoriteLocation.FavoriteViewModel
 import com.example.weatherapp3.R
@@ -42,61 +43,45 @@ fun FavoriteScreen(navController: NavController) {
     val state by viewModel.state.collectAsState()
     val locations by viewModel.locations.collectAsState()
 
+    var showLoadingAnimation by remember { mutableStateOf(true) }
+
     val loadingComposition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.fff))
     val emptyListComposition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.empty))
     val loadingProgress by animateLottieCompositionAsState(loadingComposition)
     val emptyListProgress by animateLottieCompositionAsState(emptyListComposition)
+
+    LaunchedEffect(Unit) {
+        delay(3000)
+        showLoadingAnimation = false
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFC5E2EE))
     ) {
-        when (state) {
-            is FavoriteViewModel.UIState.Loading -> {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    LottieAnimation(
-                        composition = loadingComposition,
-                        progress = { loadingProgress },
-                        modifier = Modifier.size(300.dp)
+        if (showLoadingAnimation) {
+            InitialLoadingAnimation(loadingComposition, loadingProgress)
+        } else {
+            when (state) {
+                is FavoriteViewModel.UIState.Empty -> {
+                    BackgroundImageWithAnimation(
+                        emptyListComposition,
+                        emptyListProgress
                     )
                 }
-            }
-            is FavoriteViewModel.UIState.Empty -> {
-                Image(
-                    painter = painterResource(R.drawable.skky),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    LottieAnimation(
-                        composition = emptyListComposition,
-                        progress = { emptyListProgress },
-                        modifier = Modifier.size(300.dp)
+                is FavoriteViewModel.UIState.Success -> {
+                    BackgroundImageWithList(
+                        locations = locations,
+                        repository = repository,
+                        viewModel = viewModel,
+                        navController = navController
                     )
                 }
-            }
-            is FavoriteViewModel.UIState.Success -> {
-                Image(
-                    painter = painterResource(R.drawable.skky),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-                LocationsList(
-                    locations = locations,
-                    repository = repository,
-                    viewModel = viewModel,
-                    onItemClick = { location ->
-                        navController.navigate(
-                            "weather/${location.latitude}/${location.longitude}/${location.name}"
-                        )
-                    }
-                )
-            }
-            is FavoriteViewModel.UIState.Error -> {
-                // Show error state
+                is FavoriteViewModel.UIState.Error -> {
+                    // Handle error state
+                }
+                else -> {}
             }
         }
 
@@ -110,7 +95,77 @@ fun FavoriteScreen(navController: NavController) {
             Icon(Icons.Default.Favorite, "Add Location", tint = Color.White)
         }
 
-        BottomNavigat(navController)
+
+            BottomNavigationBa(navController, modifier = Modifier.align(Alignment.BottomCenter))
+
+    }
+}
+
+
+
+
+@Composable
+private fun InitialLoadingAnimation(
+    composition: LottieComposition?,
+    progress: Float
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        LottieAnimation(
+            composition = composition,
+            progress = { progress },
+            modifier = Modifier.size(300.dp)
+        )
+    }
+}
+
+@Composable
+private fun BackgroundImageWithAnimation(
+    composition: LottieComposition?,
+    progress: Float
+) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Image(
+            painter = painterResource(R.drawable.skky),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            LottieAnimation(
+                composition = composition,
+                progress = { progress },
+                modifier = Modifier.size(300.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun BackgroundImageWithList(
+    locations: List<FavoriteLocation>,
+    repository: IFavoriteRepository,
+    viewModel: FavoriteViewModel,
+    navController: NavController
+) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Image(
+            painter = painterResource(R.drawable.skky),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+        LocationsList(
+            locations = locations,
+            repository = repository,
+            viewModel = viewModel,
+            navController = navController
+        )
     }
 }
 
@@ -119,8 +174,7 @@ private fun LocationsList(
     locations: List<FavoriteLocation>,
     repository: IFavoriteRepository,
     viewModel: FavoriteViewModel,
-    onItemClick: (FavoriteLocation) -> Unit
-
+    navController: NavController
 ) {
     LazyColumn(
         modifier = Modifier
@@ -132,7 +186,11 @@ private fun LocationsList(
             FavoriteLocationItem(
                 location = location,
                 onDelete = { viewModel.removeLocation(repository, it) },
-                onItemClick = onItemClick
+                onClick = {
+                    navController.navigate(
+                        "weather/${location.latitude}/${location.longitude}/${location.name}"
+                    )
+                }
             )
         }
     }
@@ -142,8 +200,7 @@ private fun LocationsList(
 private fun FavoriteLocationItem(
     location: FavoriteLocation,
     onDelete: (FavoriteLocation) -> Unit,
-    onItemClick: (FavoriteLocation) -> Unit
-
+    onClick: () -> Unit
 ) {
     val weatherIcon = when (location.name.lowercase()) {
         "new york" -> R.drawable.clearsky
@@ -158,7 +215,8 @@ private fun FavoriteLocationItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
-            .clip(RoundedCornerShape(12.dp)).clickable { onItemClick(location)},
+            .clip(RoundedCornerShape(12.dp))
+            .clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = Color(0xB3E0F7FA))
     ) {
         Row(
@@ -185,29 +243,34 @@ private fun FavoriteLocationItem(
                     text = "${location.latitude}, ${location.longitude}",
                     color = Color.Gray,
                     fontSize = 12.sp
-                )}
+                )
+            }
+
             IconButton(onClick = { onDelete(location) }) {
                 Icon(Icons.Default.Delete, "Delete", tint = Color.Gray)
             }
         }
     }
 }
+
 @Composable
-fun BottomNavigat(navController: NavController) {
+fun BottomNavigationBa(navController: NavController,modifier: Modifier=Modifier) {
+    val currentRoute = remember { navController.currentDestination?.route }
+
     NavigationBar(
         containerColor = Color(0xFFC5E2EE),
         tonalElevation = 8.dp,
-        modifier = Modifier
+        modifier = modifier
             .clip(RoundedCornerShape(20.dp))
     ) {
         val selectedItemColor = Color.Black
         val unselectedItemColor = Color.LightGray
 
         NavigationBarItem(
-            icon = { Icon(Icons.Filled.Home, contentDescription = "Home", tint = Color.Black) },
+            icon = { Icon(Icons.Filled.Home, "Home", tint = Color.Black) },
             label = { Text("Home", color = Color.Black) },
-            selected = true,
-            onClick = {navController.navigate("Home")},
+            selected = currentRoute == "Home",
+            onClick = { navController.navigate("Home") },
             colors = NavigationBarItemDefaults.colors(
                 indicatorColor = Color.White,
                 selectedIconColor = selectedItemColor,
@@ -216,11 +279,12 @@ fun BottomNavigat(navController: NavController) {
                 unselectedTextColor = unselectedItemColor
             )
         )
+
         NavigationBarItem(
-            icon = { Icon(Icons.Filled.Favorite, contentDescription = "Favorites", tint = Color.Black) },
+            icon = { Icon(Icons.Filled.Favorite, "Favorites", tint = Color.Black) },
             label = { Text("Favorites", color = Color.Black) },
-            selected = false,
-            onClick = {navController.navigate("Favorite")},
+            selected = currentRoute == "Favorite",
+            onClick = { navController.navigate("Favorite") },
             colors = NavigationBarItemDefaults.colors(
                 indicatorColor = Color.White,
                 selectedIconColor = selectedItemColor,
@@ -229,11 +293,12 @@ fun BottomNavigat(navController: NavController) {
                 unselectedTextColor = unselectedItemColor
             )
         )
+
         NavigationBarItem(
-            icon = { Icon(Icons.Filled.Notifications, contentDescription = "Notifications", tint = Color.Black) },
+            icon = { Icon(Icons.Filled.Notifications, "Notifications", tint = Color.Black) },
             label = { Text("Notifications", color = Color.Black) },
-            selected = false,
-            onClick = {navController.navigate("Alert")},
+            selected = currentRoute == "Alert",
+            onClick = { navController.navigate("Alert") },
             colors = NavigationBarItemDefaults.colors(
                 indicatorColor = Color.White,
                 selectedIconColor = selectedItemColor,
@@ -242,11 +307,12 @@ fun BottomNavigat(navController: NavController) {
                 unselectedTextColor = unselectedItemColor
             )
         )
+
         NavigationBarItem(
-            icon = { Icon(Icons.Filled.Settings, contentDescription = "Settings", tint = Color.Black) },
+            icon = { Icon(Icons.Filled.Settings, "Settings", tint = Color.Black) },
             label = { Text("Settings", color = Color.Black) },
-            selected = false,
-            onClick = {navController.navigate("Setting")},
+            selected = currentRoute == "Setting",
+            onClick = { navController.navigate("Setting") },
             colors = NavigationBarItemDefaults.colors(
                 indicatorColor = Color.White,
                 selectedIconColor = selectedItemColor,

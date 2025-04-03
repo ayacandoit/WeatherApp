@@ -21,6 +21,16 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+
+    packagingOptions {
+        resources {
+            excludes += listOf(
+                "META-INF/versions/9/OSGI-INF/MANIFEST.MF",
+                "META-INF/*.md",
+                "META-INF/*.txt"
+            )
+        }
+    }
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -33,6 +43,9 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        packaging {
+            resources.excludes.add("META-INF/*")
+        }
     }
     kotlinOptions {
         jvmTarget = "11"
@@ -54,6 +67,8 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.espresso.core)
     implementation(libs.androidx.espresso.core)
+    implementation(libs.identity.jvm)
+    implementation(libs.androidx.work.runtime.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -109,6 +124,19 @@ dependencies {
     implementation ("com.github.bumptech.glide:compose:1.0.0-alpha.1")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.1")
+    implementation ("org.bouncycastle:bcpkix-jdk18on:1.77")
+    implementation ("org.bouncycastle:bcprov-jdk18on:1.77")
+    implementation ("androidx.compose.material3:material3:1.1.2")
+    implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
+    implementation ("androidx.navigation:navigation-compose:2.6.0")
+    implementation ("androidx.compose.ui:ui:1.5.0") // UI components
+    implementation ("androidx.compose.material:material:1.5.0") // Material Design components (for M2)
+    implementation ("androidx.compose.ui:ui-tooling-preview:1.5.0" )
+    implementation ("androidx.compose.runtime:runtime-livedata:1.5.0")
+    implementation ("androidx.compose.material3:material3:1.2.0") // Check for latest version
+
+
+
 
 
 

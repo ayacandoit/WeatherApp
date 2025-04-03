@@ -2,7 +2,7 @@ package com.example.weatherapp3
 
 
 
-import FavoriteScreen
+
 import WeatherAlertsScreen
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
