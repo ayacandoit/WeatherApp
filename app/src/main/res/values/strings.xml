@@ -1,3 +1,15 @@
 <resources>
     <string name="app_name">WeatherApp3</string>
+    <string name="english">English</string>
+    <string name="arabic">Arabic</string>
+    <string name="defaultt">Default</string>
+
+    <string name="kelvin_k">Kelvin (K)</string>
+    <string name="celsius_c">Celsius (°C)</string>
+    <string name="fahrenheit_f">Fahrenheit (°F)</string>
+
+    <string name="meter_sec">Meter/sec</string>
+    <string name="mile_hour">Mile/hour</string>
+    <string name="gps">GPS</string>
+    <string name="map">Map</string>
 </resources>

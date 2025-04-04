@@ -159,7 +159,7 @@ class NotificationHelper(private val context: Context) {
             .build()
 
         context.getSystemService(NotificationManager::class.java)?.notify(
-            Random.nextInt(),
+            1,
             notification
         )
     }
@@ -175,6 +175,5 @@ class AlertViewModelFactory(
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
-
 
 

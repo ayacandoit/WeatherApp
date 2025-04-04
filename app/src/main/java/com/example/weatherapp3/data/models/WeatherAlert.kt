@@ -1,3 +1,5 @@
+
+
 package com.example.weatherapp3.data.models
 
 import androidx.room.Entity

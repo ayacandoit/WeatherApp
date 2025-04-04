@@ -69,6 +69,8 @@ dependencies {
     implementation(libs.androidx.espresso.core)
     implementation(libs.identity.jvm)
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.datastore.preferences.core.android)
+    implementation(libs.androidx.appcompat)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -134,6 +136,9 @@ dependencies {
     implementation ("androidx.compose.ui:ui-tooling-preview:1.5.0" )
     implementation ("androidx.compose.runtime:runtime-livedata:1.5.0")
     implementation ("androidx.compose.material3:material3:1.2.0") // Check for latest version
+    implementation ("androidx.datastore:datastore:1.0.0")
+    implementation ("com.google.protobuf:protobuf-javalite:3.21.7")
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
 
 
 

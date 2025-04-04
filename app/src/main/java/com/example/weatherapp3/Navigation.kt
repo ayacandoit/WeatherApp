@@ -2,7 +2,6 @@ package com.example.weatherapp3
 
 import FavoriteScreen
 import MapScreen
-import SettingsScreen
 import WeatherAlertsScreen
 import android.location.Location
 import androidx.compose.runtime.Composable
@@ -14,9 +13,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.forecastify.settings.SettingsScreen
 import com.example.weatherapp.ui.screens.WeatherScreen
 import com.example.weatherapp3.FavoriteLocation.FavoriteViewModel
 import com.example.weatherapp3.FavoriteLocation.FavoriteViewModelFactory
+import com.example.weatherapp3.SettingScreen.SettingsDataStore
+import com.example.weatherapp3.SettingScreen.SettingsFactory
+import com.example.weatherapp3.SettingScreen.SettingsViewModel
 import com.example.weatherapp3.data.LocalDataSource.AppDatabase
 import com.example.weatherapp3.data.repository.FavoriteRepository
 
@@ -102,7 +105,15 @@ fun Nav(
         }
 
         composable("Setting") {
-            SettingsScreen(navController)
+            val settingsDataStore = remember { SettingsDataStore(context) }
+            val viewModel: SettingsViewModel = viewModel(
+                factory = SettingsFactory(settingsDataStore)
+            )
+
+            SettingsScreen(
+                navController,
+                viewModel = viewModel
+            )
         }
     }
 }
