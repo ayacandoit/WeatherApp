@@ -53,11 +53,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.weatherapp3.R
+import com.example.weatherapp3.SettingScreen.SettingsViewModel
 
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -70,24 +72,27 @@ fun WeatherScreen(
     address: String,
     showPermissionDialog: Boolean,
     onRequestPermission: () -> Unit,
-    onDismissPermissionDialog: () -> Unit
+    onDismissPermissionDialog: () -> Unit,
+    settingsViewModel: SettingsViewModel
 ) {
     val context = LocalContext.current
     val viewModel: WeatherViewModel = remember {
         ViewModelProvider.provideWeatherViewModel(context)
     }
 
+    val temperatureUnit by settingsViewModel.temperatureUnit.collectAsStateWithLifecycle()
+    val windSpeedUnit by settingsViewModel.windSpeedUnit.collectAsState()
+
     val isLoading by viewModel.isLoading.collectAsState()
     val currentWeather by viewModel.currentWeather.collectAsState()
     val forecast by viewModel.forecast.collectAsState()
     val error by viewModel.error.collectAsState()
 
-    LaunchedEffect(location) {
+    LaunchedEffect(location, temperatureUnit, windSpeedUnit) {//reload
         if (location != null) {
-            viewModel.fetchWeatherData(location.latitude, location.longitude)
+            viewModel.fetchWeatherData(location.latitude, location.longitude, temperatureUnit)
         }
     }
-
     Scaffold(
         bottomBar = { BottomNavigationBar(navController) }
     ) { paddingValues ->
@@ -129,7 +134,8 @@ fun WeatherScreen(
                 WeatherCard(
                     location = location,
                     address = address,
-                    currentWeather = currentWeather
+                    currentWeather = currentWeather,
+                    settingsViewModel = settingsViewModel
                 )
 
                 Text(
@@ -141,7 +147,7 @@ fun WeatherScreen(
                 )
 
                 currentWeather?.let { weather ->
-                    WeatherRow(weather = weather)
+                    WeatherRow(weather = weather, settingsViewModel = settingsViewModel)
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -163,7 +169,8 @@ fun WeatherScreen(
                         WeatherListItem(
                             day = SimpleDateFormat("EEEE", Locale.getDefault())
                                 .format(Date(firstForecast.dt * 1000)),
-                            temperature = "${firstForecast.main.temp.toInt()}°C",
+                            temperature = settingsViewModel.convertTemperature(firstForecast.main.temp),
+                            unit = settingsViewModel.getTemperatureUnit(),
                             weatherCondition = firstForecast.weather.firstOrNull()?.main ?: "Unknown",
                             iconCode = firstForecast.weather.firstOrNull()?.icon ?: "01d"
                         )
@@ -173,7 +180,8 @@ fun WeatherScreen(
                     repeat(5) { index ->
                         WeatherListItem(
                             day = "Day ${index + 1}",
-                            temperature = "${(15..25).random()}°C",
+                            temperature = (15..25).random().toDouble(),
+                            unit = settingsViewModel.getTemperatureUnit(),
                             weatherCondition = listOf("Clear", "Cloudy", "Rainy", "Snowy", "Windy").random(),
                             iconCode = "01d"
                         )
@@ -212,11 +220,16 @@ fun WeatherScreen(
 fun WeatherCard(
     location: Location?,
     address: String,
-    currentWeather: WeatherResponse?
+    currentWeather: WeatherResponse?,
+    settingsViewModel: SettingsViewModel
 ) {
-    val temperature = currentWeather?.main?.temp?.let { "%.1f°C".format(it) } ?: "--°C"
-    val weatherCondition = currentWeather?.weather?.firstOrNull()?.main ?: "Clear"
-    val iconCode = currentWeather?.weather?.firstOrNull()?.icon ?: "01d"
+    val tempInKelvin = currentWeather?.main?.temp ?: 0.0
+    val convertedTemp = settingsViewModel.convertTemperature(tempInKelvin)
+    val tempUnit = settingsViewModel.getTemperatureUnit()
+    val temperature = if (currentWeather != null)
+        "%.1f$tempUnit".format(convertedTemp)
+    else
+        "--$tempUnit"
 
     Card(
         modifier = Modifier
@@ -230,32 +243,38 @@ fun WeatherCard(
             modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            WeatherIcon(
-                iconCode = iconCode,
-                modifier = Modifier.size(100.dp)
-            )
+            currentWeather?.weather?.firstOrNull()?.let { weather ->
+                WeatherIcon(
+                    iconCode = weather.icon,
+                    modifier = Modifier.size(100.dp)
+                )
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = address,
-                color = Color.White,
-            )
+                Text(
+                    text = address,
+                    color = Color.White,
+                )
 
-            Text(
-                text = temperature,
-                color = Color.White,
-                modifier = Modifier.padding(vertical = 4.dp)
-            )
+                Text(
+                    text = temperature,
+                    color = Color.White,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
 
-            Text(
-                text = weatherCondition,
-                color = Color.Gray,
-            )
+                Text(
+                    text = weather.main ?: "Unknown",
+                    color = Color.Gray,
+                )
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-            currentWeather?.let { weather ->
+                // Wind speed section
+                val windSpeedMps = currentWeather.wind.speed
+                val convertedSpeed = settingsViewModel.convertWindSpeed(windSpeedMps)
+                val windUnit = settingsViewModel.getWindSpeedUnit()
+                val windSpeed = "%.1f $windUnit".format(convertedSpeed)
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceAround
@@ -263,24 +282,26 @@ fun WeatherCard(
                     WeatherInfoItem(
                         icon = R.drawable.clouds,
                         label = "Cloud",
-                        value = "${weather.clouds.all}%"
+                        value = "${currentWeather.clouds.all}%"
                     )
                     WeatherInfoItem(
                         icon = R.drawable.wind,
                         label = "Wind speed",
-                        value = "${weather.wind.speed} m/s"
+                        value = windSpeed
                     )
                     WeatherInfoItem(
                         icon = R.drawable.humidity,
                         label = "Humidity",
-                        value = "${weather.main.humidity}%"
+                        value = "${currentWeather.main.humidity}%"
                     )
                     WeatherInfoItem(
                         icon = R.drawable.pressure,
                         label = "Pressure",
-                        value = "${weather.main.pressure} hPa"
+                        value = "${currentWeather.main.pressure} hPa"
                     )
                 }
+            } ?: run {
+                Text("No weather data available", color = Color.White)
             }
         }
     }
@@ -289,7 +310,8 @@ fun WeatherCard(
 @Composable
 fun WeatherListItem(
     day: String,
-    temperature: String,
+    temperature: Double,
+    unit: String,
     weatherCondition: String,
     iconCode: String
 ) {
@@ -311,28 +333,95 @@ fun WeatherListItem(
                 modifier = Modifier.size(40.dp)
             )
             Text(text = day, color = Color.Black, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            Text(text = temperature, color = Color.White, fontSize = 18.sp)
+            Text(text = "%.1f$unit".format(temperature), color = Color.White, fontSize = 18.sp)
             Text(text = weatherCondition, color = Color.Gray)
+        }
+    }
+}
+@Composable
+fun WeatherRow(
+    weather: WeatherResponse,
+    settingsViewModel: SettingsViewModel
+) {
+    val hourlyForecast = remember { generateHourlyForecast(weather) }
+
+    LazyRow(
+        modifier = Modifier.padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(hourlyForecast) { forecastItem ->
+            WeatherItem(
+                time = forecastItem.time,
+                temperature = settingsViewModel.convertTemperature(forecastItem.temp),
+                unit = settingsViewModel.getTemperatureUnit(),
+                iconCode = forecastItem.icon
+            )
         }
     }
 }
 
 @Composable
-fun WeatherRow(weather: WeatherResponse) {
-    LazyRow(
-        modifier = Modifier.padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+fun WeatherItem(
+    time: String,
+    temperature: Double,
+    unit: String,
+    iconCode: String
+) {
+    Card(
+        modifier = Modifier
+            .width(80.dp)
+            .height(180.dp),
+        shape = RoundedCornerShape(40.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFB3E5FC).copy(alpha = 0.5f)),
+        elevation = CardDefaults.cardElevation(4.dp)
     ) {
-        items(5) { index ->
-            val hour = (index + 1) * 3
-            WeatherItem(
-                time = "$hour:00",
-                temperature = "${weather.main.temp.toInt() + (index - 2)}°C",
-                iconCode = weather.weather.firstOrNull()?.icon ?: "01d"
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = time,
+                color = Color.Black,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            WeatherIcon(
+                iconCode = iconCode,
+                modifier = Modifier.size(40.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "%.1f%s".format(temperature, unit),
+                color = Color.White,
+                fontSize = 16.sp
             )
         }
     }
 }
+
+// Helper function to generate hourly forecast data
+private fun generateHourlyForecast(weather: WeatherResponse): List<HourlyForecast> {
+    val baseTime = weather.dt
+    val baseTemp = weather.main.temp
+    return List(5) { index ->
+        HourlyForecast(
+            time = "${(index + 1) * 3}:00",
+            temp = baseTemp + (index - 2),
+            icon = weather.weather.firstOrNull()?.icon ?: "01d"
+        )
+    }
+}
+
+// Data class for hourly forecast items
+private data class HourlyForecast(
+    val time: String,
+    val temp: Double,
+    val icon: String
+)
 
 @Composable
 fun WeatherItem(

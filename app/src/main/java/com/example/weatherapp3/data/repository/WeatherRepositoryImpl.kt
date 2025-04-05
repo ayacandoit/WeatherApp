@@ -4,10 +4,10 @@ import ForecastResponse
 import WeatherRepository
 import WeatherResponse
 class WeatherRepositoryImpl(
-    private val apiService: WeatherApi.WeatherApiService
+     val apiService: WeatherApi.WeatherApiService
 ) : WeatherRepository {
 
-    override suspend fun getCurrentWeather(lat: Double, lon: Double): WeatherRepository.Result<WeatherResponse> {
+    override suspend fun getCurrentWeather(lat: Double, lon: Double,unit:String): WeatherRepository.Result<WeatherResponse> {
         return try {
             val response = apiService.getCurrentWeather(lat, lon)
             WeatherRepository.Result.Success(response)

@@ -20,6 +20,5 @@ import com.example.weatherapp3.data.models.Alert
 interface AlertRepository {
     suspend fun addAlert(alert: Alert): Long
     suspend fun removeAlert(alert: Alert)
-    suspend fun updateAlert(alert: Alert)
     fun getAllAlerts(): Flow<List<Alert>>
 }

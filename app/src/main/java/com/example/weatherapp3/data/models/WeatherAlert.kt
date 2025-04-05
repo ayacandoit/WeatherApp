@@ -16,5 +16,9 @@ data class Alert(
     val startTime: Long,     // Start time in milliseconds
     val endTime: Long,       // End time in milliseconds
     val location: String,
+    val lon:Double,
+    val lit:Double,
+
+
     val workId: String? = null  // WorkManager UUID
 )

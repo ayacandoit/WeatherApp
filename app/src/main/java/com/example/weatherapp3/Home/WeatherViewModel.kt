@@ -26,12 +26,12 @@ class WeatherViewModel(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    fun fetchWeatherData(lat: Double, lon: Double) {
+    fun fetchWeatherData(lat: Double, lon: Double,unit:String) {
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
 
-            when (val currentWeatherResult = repository.getCurrentWeather(lat, lon)) {
+            when (val currentWeatherResult = repository.getCurrentWeather(lat, lon,unit)) {
                 is WeatherRepository.Result.Success -> {
                     _currentWeather.value = currentWeatherResult.data
                 }

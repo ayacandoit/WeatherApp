@@ -4,6 +4,8 @@ import FavoriteScreen
 import MapScreen
 import WeatherAlertsScreen
 import android.location.Location
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
@@ -24,6 +26,7 @@ import com.example.weatherapp3.data.LocalDataSource.AppDatabase
 import com.example.weatherapp3.data.repository.FavoriteRepository
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun Nav(
     onRequestPermission: () -> Unit,
@@ -37,6 +40,10 @@ fun Nav(
     val context = LocalContext.current
     val db = remember { AppDatabase.getDatabase(context) }
     val repository = remember { FavoriteRepository(db.favoriteDao()) }
+    val settingsDataStore = remember { SettingsDataStore(context) }
+    val settingsViewModel: SettingsViewModel = viewModel(
+        factory = SettingsFactory(settingsDataStore)
+    )
 
     NavHost(
         navController = navController,
@@ -63,7 +70,10 @@ fun Nav(
         }
 
         composable("Alert") {
-            WeatherAlertsScreen(navController)
+            WeatherAlertsScreen(
+                navController,
+                location = currentLocation
+            )
         }
 
         composable(
@@ -89,7 +99,8 @@ fun Nav(
                 address = name,
                 showPermissionDialog = false,
                 onRequestPermission = onRequestPermission,
-                onDismissPermissionDialog = onDismissPermissionDialog
+                onDismissPermissionDialog = onDismissPermissionDialog,
+                settingsViewModel = settingsViewModel
             )
         }
 
@@ -100,7 +111,8 @@ fun Nav(
                 address = address,
                 showPermissionDialog = showPermissionDialog,
                 onRequestPermission = onRequestPermission,
-                onDismissPermissionDialog = onDismissPermissionDialog
+                onDismissPermissionDialog = onDismissPermissionDialog,
+                settingsViewModel = settingsViewModel
             )
         }
 
@@ -117,3 +129,4 @@ fun Nav(
         }
     }
 }
+

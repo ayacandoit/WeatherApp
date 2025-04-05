@@ -1,6 +1,7 @@
-// repository/WeatherRepository.kt
+import java.util.concurrent.TimeUnit
+
 interface WeatherRepository {
-    suspend fun getCurrentWeather(lat: Double, lon: Double): Result<WeatherResponse>
+    suspend fun getCurrentWeather(lat: Double, lon: Double,unit: String ): Result<WeatherResponse>
     suspend fun getForecast(lat: Double, lon: Double): Result<ForecastResponse>
 
     sealed interface Result<out T> {

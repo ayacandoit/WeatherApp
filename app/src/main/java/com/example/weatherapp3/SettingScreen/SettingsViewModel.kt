@@ -26,14 +26,18 @@ class SettingsViewModel(private val settingsDataStore: SettingsDataStore) : View
 
     fun loadSettings() {
         viewModelScope.launch {
+            settingsDataStore.getSetting(SettingsDataStore.TEMPERATURE_UNIT_KEY, "Kelvin")
+                .collect {
+                    _temperatureUnit.value = it
+                    println("القيمة الجديدة لدرجة الحرارة: $it")
+                }
+        }
+        viewModelScope.launch {
             settingsDataStore.getSetting(SettingsDataStore.LANGUAGE_KEY, "English")
                 .collect { _language.value = it }
         }
 
-        viewModelScope.launch {
-            settingsDataStore.getSetting(SettingsDataStore.TEMPERATURE_UNIT_KEY, "Kelvin")
-                .collect { _temperatureUnit.value = it }
-        }
+
 
         viewModelScope.launch {
             settingsDataStore.getSetting(SettingsDataStore.WIND_SPEED_UNIT_KEY, "Meter/Sec")
@@ -48,39 +52,47 @@ class SettingsViewModel(private val settingsDataStore: SettingsDataStore) : View
 
     fun saveSetting(key: Preferences.Key<String>, value: String) {
         viewModelScope.launch {
+            // احفظ القيمة في DataStore
             settingsDataStore.saveSetting(key, value)
+
+            // حمّل الإعدادات فورًا بعد الحفظ
+            loadSettings()
+
+            // (اختياري) اطبع للتأكد من القيمة الجديدة
+            println("تم تحديث الإعداد: $key -> $value")
         }
     }
 
     fun convertTemperature(tempInKelvin: Double): Double {
-        return when (_temperatureUnit.value) {
+        return when (temperatureUnit.value) { // استخدام القيمة الحالية مباشرة
             "Celsius" -> tempInKelvin - 273.15
             "Fahrenheit" -> (tempInKelvin - 273.15) * 9 / 5 + 32
             else -> tempInKelvin
         }
     }
 
-    fun getTemperatureUnit(unit: String): String {
-        return when (unit) {
-            "Celsius" -> "°C"
-            "Fahrenheit" -> "°F"
-            else -> "°K"
-        }
-    }
-
-    fun convertWindSpeed(speedInMeterPerSec: Double, unit: String): Double {
-        return when (unit) {
+    fun convertWindSpeed(speedInMeterPerSec: Double): Double {
+        return when (windSpeedUnit.value) { // استخدام القيمة الحالية مباشرة
             "Mile/Hour" -> speedInMeterPerSec * 2.23694
             else -> speedInMeterPerSec
         }
     }
+    fun getTemperatureUnit(): String {
+        return when (_temperatureUnit.value) { // استخدام القيمة من الـ StateFlow
+            "Celsius" -> "°C"
+            "Fahrenheit" -> "°F"
+            else -> "K"
+        }
+    }
 
-    fun getWindSpeedUnit(unit: String = windSpeedUnit.value): String {
-        return when (unit) {
+    fun getWindSpeedUnit(): String {
+        return when (_windSpeedUnit.value) {
             "Mile/Hour" -> "mph"
             else -> "m/s"
         }
     }
+
+
 
 
 

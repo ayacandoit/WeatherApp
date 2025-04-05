@@ -5,6 +5,7 @@ import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,21 +38,26 @@ import kotlinx.coroutines.launch
 
 import androidx.lifecycle.viewModelScope
 import androidx.work.*
+import com.example.weatherapp3.R
 import kotlinx.coroutines.launch
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.Calendar
+import java.util.Date
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlin.random.Random
 
+private val TAG = "AlertViewModel"
 
 class AlertViewModel(private val repository: AlertRepository) : ViewModel() {
     val alerts = repository.getAllAlerts().asLiveData()
     private val TAG = "AlertViewModel"
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun addAlert(alert: Alert) {
         viewModelScope.launch {
+            Log.i(TAG, "addAlert: addAlert")
             val workId = scheduleNotification(alert)
             val newAlert = alert.copy(workId = workId.toString())
             repository.addAlert(newAlert)
@@ -65,12 +71,13 @@ class AlertViewModel(private val repository: AlertRepository) : ViewModel() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun scheduleNotification(alert: Alert): UUID {
         val delay = calculateDelay(alert.date, alert.startTime)
         Log.i(TAG, "scheduleNotification:$delay ")
         val workRequest = OneTimeWorkRequestBuilder<AlertWorker>()
             .setInputData(createInputData(alert))
-            .setInitialDelay(delay, TimeUnit.MILLISECONDS)
+            .setInitialDelay(60*1000, TimeUnit.MILLISECONDS)
             .build()
 
         WorkManager.getInstance().enqueue(workRequest)
@@ -81,15 +88,19 @@ class AlertViewModel(private val repository: AlertRepository) : ViewModel() {
         WorkManager.getInstance().cancelWorkById(workId)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun calculateDelay(date: Long, startTime: Long): Long {
         val alertDateTime = date + startTime
-        val currentTime = System.currentTimeMillis()
-        return alertDateTime/1000 - currentTime
+
+        val currentTime = Date().toInstant().toEpochMilli()
+        Log.i(TAG, "calculateDelay: $alertDateTime $currentTime")
+        return alertDateTime - currentTime
     }
 
     private fun createInputData(alert: Alert): Data {
         return workDataOf(
-            "location" to alert.location,
+            "lon" to alert.lon,
+            "lat" to alert.lit,
             "startTime" to alert.startTime,
             "endTime" to alert.endTime
         )
@@ -97,21 +108,24 @@ class AlertViewModel(private val repository: AlertRepository) : ViewModel() {
 }
 
 class AlertWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
-    private val apiService by lazy { createWeatherApiService() }
+    private val apiService=createWeatherApiService()
+
 
     override suspend fun doWork(): Result {
         return try {
-            val location = inputData.getString("location") ?: return Result.failure()
-            val weatherData = getWeatherData(location)
+            val lon = inputData.getDouble("lon",0.0)
+            val lat = inputData.getDouble("lat",0.0)
+
+            val weatherData = getWeatherData(lat,lon)
             sendNotification(weatherData)
             Result.success()
         } catch (e: Exception) {
+            Log.e(TAG, "doWork: ${e.message}",e)
             Result.failure()
         }
     }
 
-    private suspend fun getWeatherData(location: String): WeatherResponse {
-        val (lat, lon) = location.split(",").map { it.toDouble() }
+    private suspend fun getWeatherData(lat:Double,lon:Double): WeatherResponse {
         return apiService.getCurrentWeather(lat, lon, "metric", "7aa3bb648428835511de89e79afe24c5")
     }
 
@@ -155,6 +169,7 @@ class NotificationHelper(private val context: Context) {
         val notification = NotificationCompat.Builder(context, channelId)
             .setContentTitle(title)
             .setContentText(message)
+            .setSmallIcon(R.drawable.bell)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
 

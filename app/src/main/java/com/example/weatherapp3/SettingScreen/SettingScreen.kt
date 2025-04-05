@@ -17,9 +17,19 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,18 +39,26 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.os.LocaleListCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.example.weatherapp3.R
 import com.example.weatherapp3.SettingScreen.SettingsDataStore
 import com.example.weatherapp3.SettingScreen.SettingsViewModel
 import java.text.NumberFormat
 import java.util.Locale
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.ViewModel
+
+
 
 @Composable
 fun SettingsScreen(navHostController: NavHostController, viewModel: SettingsViewModel) {
@@ -169,7 +187,6 @@ fun SettingSection(
         }
     }
 }
-
 object LanguageConverter {
     fun changeLanguage(context: Context, languageCode: String) {
         //version >= 13
@@ -185,5 +202,71 @@ object LanguageConverter {
     fun formatNumber(value: Int): String {
         val formatter = NumberFormat.getInstance(Locale.getDefault())
         return formatter.format(value)
+    }
+}
+
+@Composable
+fun BottomNavigationBar(navController: NavController) {
+    NavigationBar(
+        containerColor = Color(0xFFC5E2EE),
+        tonalElevation = 8.dp,
+        modifier = Modifier
+            .clip(RoundedCornerShape(20.dp))
+    ) {
+        val selectedItemColor = Color.Black
+        val unselectedItemColor = Color.LightGray
+
+        NavigationBarItem(
+            icon = { Icon(Icons.Filled.Home, contentDescription = "Home", tint = Color.Black) },
+            label = { Text("Home", color = Color.Black) },
+            selected = true,
+            onClick = { navController.navigate("Home") },
+            colors = NavigationBarItemDefaults.colors(
+                indicatorColor = Color.White,
+                selectedIconColor = selectedItemColor,
+                unselectedIconColor = unselectedItemColor,
+                selectedTextColor = selectedItemColor,
+                unselectedTextColor = unselectedItemColor
+            )
+        )
+        NavigationBarItem(
+            icon = { Icon(Icons.Filled.Favorite, contentDescription = "Favorites", tint = Color.Black) },
+            label = { Text("Favorites", color = Color.Black) },
+            selected = false,
+            onClick = { navController.navigate("Favorite") },
+            colors = NavigationBarItemDefaults.colors(
+                indicatorColor = Color.White,
+                selectedIconColor = selectedItemColor,
+                unselectedIconColor = unselectedItemColor,
+                selectedTextColor = selectedItemColor,
+                unselectedTextColor = unselectedItemColor
+            )
+        )
+        NavigationBarItem(
+            icon = { Icon(Icons.Filled.Notifications, contentDescription = "Notifications", tint = Color.Black) },
+            label = { Text("Notifications", color = Color.Black) },
+            selected = false,
+            onClick = { navController.navigate("Alert") },
+            colors = NavigationBarItemDefaults.colors(
+                indicatorColor = Color.White,
+                selectedIconColor = selectedItemColor,
+                unselectedIconColor = unselectedItemColor,
+                selectedTextColor = selectedItemColor,
+                unselectedTextColor = unselectedItemColor
+            )
+        )
+        NavigationBarItem(
+            icon = { Icon(Icons.Filled.Settings, contentDescription = "Settings", tint = Color.Black) },
+            label = { Text("Settings", color = Color.Black) },
+            selected = false,
+            onClick = { navController.navigate("Setting") },
+            colors = NavigationBarItemDefaults.colors(
+                indicatorColor = Color.White,
+                selectedIconColor = selectedItemColor,
+                unselectedIconColor = unselectedItemColor,
+                selectedTextColor = selectedItemColor,
+                unselectedTextColor = unselectedItemColor
+            )
+        )
     }
 }

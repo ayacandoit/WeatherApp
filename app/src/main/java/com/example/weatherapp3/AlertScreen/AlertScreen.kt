@@ -1,4 +1,5 @@
 // AlertScreen.kt
+import android.location.Location
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
@@ -25,13 +26,18 @@ import com.example.weatherapp3.data.LocalDataSource.WeatherAlertDatabase
 import com.example.weatherapp3.data.models.Alert
 import com.example.weatherapp3.data.repository.AlertRepositoryImpl
 import java.time.Instant
+import java.time.LocalDateTime
 import java.time.ZoneId
+import java.time.ZoneId.systemDefault
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun WeatherAlertsScreen(navController: NavController) {
+fun WeatherAlertsScreen(navController: NavController, location: Location?,
+) {
     val context = LocalContext.current
     val database = WeatherAlertDatabase.getDatabase(context)
     val repository = AlertRepositoryImpl(database.weatherAlertDao())
@@ -65,7 +71,8 @@ fun WeatherAlertsScreen(navController: NavController) {
                     onDismiss = { showDialog = false },
                     onSave = { alert ->
                         viewModel.addAlert(alert)
-                    }
+                    },
+                    location = location
                 )
             }
         }
@@ -99,11 +106,11 @@ fun AlertItem(alert: Alert, onDelete: (Alert) -> Unit) {
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
     val date = Instant.ofEpochMilli(alert.date)
-        .atZone(ZoneId.systemDefault())
+        .atZone(ZoneOffset.UTC)
         .toLocalDate()
 
     val startTime = Instant.ofEpochMilli(alert.startTime)
-        .atZone(ZoneId.systemDefault())
+        .atZone(ZoneOffset.UTC)
         .toLocalTime()
 
     val endTime = Instant.ofEpochMilli(alert.endTime)
@@ -148,11 +155,13 @@ fun AlertItem(alert: Alert, onDelete: (Alert) -> Unit) {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddAlertDialog(
     onDismiss: () -> Unit,
-    onSave: (Alert) -> Unit
+    onSave: (Alert) -> Unit,
+    location: Location?
 ) {
     var selectedDate by remember { mutableStateOf(System.currentTimeMillis()) }
     var startTime by remember { mutableStateOf(0L) }
@@ -182,17 +191,17 @@ fun AddAlertDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    val calendar = Calendar.getInstance().apply {
-                        timeInMillis = selectedDate
-                    }
+
 
                     onSave(
                         Alert(
-                            date = calendar.timeInMillis,
+                            date = selectedDate,
                             startTime = startTime,
                             endTime = startTime + 3600000, // +1 hour
-                            location = "Current Location"
-                        )
+                            location = "Current Location",
+                            lon =location?.longitude?:0.0 ,
+                            lit =location?.latitude?:0.0 
+                     )
                     )
                     onDismiss()
                 }
@@ -223,6 +232,7 @@ fun AddAlertDialog(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DatePickerDialog1(
@@ -241,7 +251,12 @@ fun DatePickerDialog1(
             confirmButton = {
                 Button(
                     onClick = {
-                        datePickerState.selectedDateMillis?.let(onDateSelected)
+                        datePickerState.selectedDateMillis?.let{
+                            val instant=Instant.ofEpochMilli(it)
+                            val localDateTime=LocalDateTime.ofInstant(instant,ZoneId.systemDefault()).toLocalDate()
+                            val t=localDateTime.dayOfYear*24*60*60*1000
+                            onDateSelected(t.toLong())
+                        }
                         showDialog = false
                         onDismiss()
                     }
@@ -262,15 +277,14 @@ fun TimePickerDialog(
     onTimeSelected: (Long) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val calendar = Calendar.getInstance().apply { timeInMillis = initialTimeMillis }
+    val date=Date()
     val timePickerState = rememberTimePickerState(
-        initialHour = calendar.get(Calendar.HOUR_OF_DAY),
-        initialMinute = calendar.get(Calendar.MINUTE)
+        initialHour = date.hours,
+        initialMinute = date.minutes
     )
     var showDialog by remember { mutableStateOf(true) }
 
     if (showDialog) {
-        androidx.compose.material3.
         AlertDialog(
             onDismissRequest = {
                 showDialog = false

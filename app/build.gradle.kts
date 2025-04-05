@@ -139,6 +139,13 @@ dependencies {
     implementation ("androidx.datastore:datastore:1.0.0")
     implementation ("com.google.protobuf:protobuf-javalite:3.21.7")
     implementation("androidx.datastore:datastore-preferences:1.0.0")
+    androidTestImplementation ("androidx.test.ext:junit:1.1.5")
+    testImplementation ("io.mockk:mockk:1.13.8")
+    testImplementation ("androidx.test.ext:junit-ktx:1.1.5")
+    testImplementation ("androidx.test:core-ktx:1.5.0")
+    testImplementation ("org.robolectric:robolectric:4.11.1")
+    testImplementation ("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
+
 
 
 
