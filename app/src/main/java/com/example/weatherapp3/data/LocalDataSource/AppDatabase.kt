@@ -10,6 +10,7 @@ import com.example.weatherapp3.data.models.FavoriteLocation
 abstract class AppDatabase : RoomDatabase() {
     abstract fun favoriteDao(): FavoriteDao
 
+
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null

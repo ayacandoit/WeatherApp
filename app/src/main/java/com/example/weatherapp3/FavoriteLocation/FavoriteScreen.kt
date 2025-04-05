@@ -30,6 +30,7 @@ import com.airbnb.lottie.compose.*
 import com.example.weatherapp3.FavoriteLocation.FavoriteViewModel
 import com.example.weatherapp3.R
 import com.example.weatherapp3.data.LocalDataSource.AppDatabase
+import com.example.weatherapp3.data.LocalDataSource.LocalDataSourceImpl
 import com.example.weatherapp3.data.models.FavoriteLocation
 import com.example.weatherapp3.data.repository.FavoriteRepository
 import com.example.weatherapp3.data.repository.IFavoriteRepository
@@ -38,7 +39,10 @@ import kotlinx.coroutines.delay
 fun FavoriteScreen(navController: NavController) {
     val context = LocalContext.current
     val db = remember { AppDatabase.getDatabase(context) }
-    val repository = remember { FavoriteRepository(db.favoriteDao()) }
+
+    val local =LocalDataSourceImpl(db.favoriteDao())
+
+    val repository = remember { FavoriteRepository(local) }
     val viewModel = remember { FavoriteViewModel(repository) }
     val state by viewModel.state.collectAsState()
     val locations by viewModel.locations.collectAsState()

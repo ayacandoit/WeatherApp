@@ -52,12 +52,11 @@ import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.example.weatherapp3.R
 import com.example.weatherapp3.SettingScreen.SettingsDataStore
-import com.example.weatherapp3.SettingScreen.SettingsViewModel
 import java.text.NumberFormat
 import java.util.Locale
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.ViewModel
-
+import com.example.weatherapp3.SettingScreen.SettingsViewModel
 
 
 @Composable

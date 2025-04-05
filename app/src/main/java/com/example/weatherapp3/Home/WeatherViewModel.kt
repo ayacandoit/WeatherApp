@@ -3,6 +3,7 @@ import androidx.activity.ComponentActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.weatherapp3.data.Api.RemoteDataSourceImp
 import com.example.weatherapp3.data.repository.WeatherRepositoryImpl
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -58,9 +59,7 @@ class WeatherViewModel(
         }
     }
 }
-class WeatherViewModelFactory(
-    private val repository: WeatherRepository
-) : ViewModelProvider.Factory {
+class WeatherViewModelFactory(private val repository: WeatherRepository) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -72,7 +71,7 @@ class WeatherViewModelFactory(
 }
 object ViewModelProvider {
     fun provideWeatherViewModel(context: Context): WeatherViewModel {
-        val repository = WeatherRepositoryImpl(WeatherApi.service)
+        val repository = WeatherRepositoryImpl(RemoteDataSourceImp(WeatherApi.service))
         val factory = WeatherViewModelFactory(repository)
         return ViewModelProvider(
             (context as ComponentActivity).viewModelStore,

@@ -23,6 +23,7 @@ import com.example.weatherapp3.SettingScreen.SettingsDataStore
 import com.example.weatherapp3.SettingScreen.SettingsFactory
 import com.example.weatherapp3.SettingScreen.SettingsViewModel
 import com.example.weatherapp3.data.LocalDataSource.AppDatabase
+import com.example.weatherapp3.data.LocalDataSource.LocalDataSourceImpl
 import com.example.weatherapp3.data.repository.FavoriteRepository
 
 
@@ -39,7 +40,9 @@ fun Nav(
     val navController = rememberNavController()
     val context = LocalContext.current
     val db = remember { AppDatabase.getDatabase(context) }
-    val repository = remember { FavoriteRepository(db.favoriteDao()) }
+    val local = LocalDataSourceImpl(db.favoriteDao())
+
+    val repository = remember { FavoriteRepository(local) }
     val settingsDataStore = remember { SettingsDataStore(context) }
     val settingsViewModel: SettingsViewModel = viewModel(
         factory = SettingsFactory(settingsDataStore)
