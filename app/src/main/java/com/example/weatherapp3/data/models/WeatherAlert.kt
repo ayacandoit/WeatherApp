@@ -12,13 +12,13 @@ import java.time.LocalTime
 @Entity(tableName = "alerts")
 data class Alert(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val date: Long,          // Date in milliseconds
-    val startTime: Long,     // Start time in milliseconds
-    val endTime: Long,       // End time in milliseconds
+    val date: Long,
+    val startTime: Long,
+    val endTime: Long,
     val location: String,
     val lon:Double,
     val lit:Double,
 
 
-    val workId: String? = null  // WorkManager UUID
+    val workId: String? = null
 )

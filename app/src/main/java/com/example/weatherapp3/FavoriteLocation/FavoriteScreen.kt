@@ -83,7 +83,6 @@ fun FavoriteScreen(navController: NavController) {
                     )
                 }
                 is FavoriteViewModel.UIState.Error -> {
-                    // Handle error state
                 }
                 else -> {}
             }

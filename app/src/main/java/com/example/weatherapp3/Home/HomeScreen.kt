@@ -403,7 +403,6 @@ fun WeatherItem(
     }
 }
 
-// Helper function to generate hourly forecast data
 private fun generateHourlyForecast(weather: WeatherResponse): List<HourlyForecast> {
     val baseTime = weather.dt
     val baseTemp = weather.main.temp
@@ -416,7 +415,6 @@ private fun generateHourlyForecast(weather: WeatherResponse): List<HourlyForecas
     }
 }
 
-// Data class for hourly forecast items
 private data class HourlyForecast(
     val time: String,
     val temp: Double,
