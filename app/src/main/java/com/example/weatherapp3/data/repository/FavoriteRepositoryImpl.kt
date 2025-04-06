@@ -1,10 +1,11 @@
 package com.example.weatherapp3.data.repository
 
 import com.example.weatherapp3.data.LocalDataSource.FavoriteDao
+import com.example.weatherapp3.data.LocalDataSource.LocalDataSource
 import com.example.weatherapp3.data.LocalDataSource.LocalDataSourceImpl
 import com.example.weatherapp3.data.models.FavoriteLocation
 import kotlinx.coroutines.flow.Flow
-class FavoriteRepository (    private val localDataSource: LocalDataSourceImpl,
+class FavoriteRepository (private val localDataSource: LocalDataSource,
 ) : IFavoriteRepository {
     override suspend fun getAllLocations(): Flow<List<FavoriteLocation>> = localDataSource.getAllLocations()
 

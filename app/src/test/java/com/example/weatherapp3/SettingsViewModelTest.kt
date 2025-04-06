@@ -35,8 +35,25 @@ class SettingsViewModelTest {
     fun tearDown() {
         Dispatchers.resetMain()
     }
+
     @Test
-    fun `loadSettings updates state with values from datastore`() = runTest {
+    fun `convertWindSpee return correct mph value`() {
+        viewModel = SettingsViewModel(settingsDataStore).apply {
+            _windSpeedUnit.value = "Mile/Hour"
+        }
+        val result = viewModel.convertWindSpeed(10.0)
+        assertThat(result, `is`(org.hamcrest.number.IsCloseTo.closeTo(22.3694, 0.01)))
+    }
+    @Test
+    fun `convertTemperature returns correct Celsiu value`() {
+        viewModel = SettingsViewModel(settingsDataStore).apply {
+            _temperatureUnit.value = "Celsius"
+        }
+        val result = viewModel.convertTemperature(300.0)
+        assertThat(result, `is`(org.hamcrest.number.IsCloseTo.closeTo(26.85, 0.01)))
+    }
+    @Test
+    fun `loadSetting update state with value from datastore`() = runTest {
         every {
             settingsDataStore.getSetting(
                 SettingsDataStore.LANGUAGE_KEY,
@@ -67,22 +84,6 @@ class SettingsViewModelTest {
         assertThat(viewModel.temperatureUnit.value, `is`("Celsius"))
         assertThat(viewModel.windSpeedUnit.value, `is`("Mile/Hour"))
         assertThat(viewModel.locationMethod.value, `is`("Map"))
-    }
-    @Test
-    fun `convertWindSpeed returns correct mph value`() {
-        viewModel = SettingsViewModel(settingsDataStore).apply {
-            _windSpeedUnit.value = "Mile/Hour"
-        }
-        val result = viewModel.convertWindSpeed(10.0)
-        assertThat(result, `is`(org.hamcrest.number.IsCloseTo.closeTo(22.3694, 0.01)))
-    }
-    @Test
-    fun `convertTemperature returns correct Celsius value`() {
-        viewModel = SettingsViewModel(settingsDataStore).apply {
-            _temperatureUnit.value = "Celsius"
-        }
-        val result = viewModel.convertTemperature(300.0)
-        assertThat(result, `is`(org.hamcrest.number.IsCloseTo.closeTo(26.85, 0.01)))
     }
 
 
